@@ -1,0 +1,3 @@
+[submodule "LiSA"]
+	path = LiSA
+	url = https://github.com/epfl-radio-astro/LiSA.git
