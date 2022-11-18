@@ -1,0 +1,6 @@
+# python-pysap==0.0.5
+tensorflow==2.7.4
+kymatio
+scikit-image
+h5py
+PyQt5

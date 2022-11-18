@@ -5,8 +5,8 @@ from sklearn.preprocessing import StandardScaler
 def plot_features(x0, x_in, y_in, feature_matrix, indices, feature_labels,label_list):
     n_output_coeffs = feature_matrix.shape[1]
     plt.clf()
-    plt.tick_params(left = False, bottom=False)
     fig, axs = plt.subplots(len(indices),n_output_coeffs+2, figsize=(10, 6))
+    plt.tick_params(left = False, bottom=False)
     #plt.tight_layout()
     fig.subplots_adjust(hspace=0, wspace= 0, bottom = 0.01, left = 0.25, top = 0.7,  right = 0.99)
 

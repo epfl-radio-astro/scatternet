@@ -1,5 +1,6 @@
 
 import sys
+import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
@@ -15,23 +16,29 @@ from sklearn.utils.fixes import loguniform
 
 from tensorflow.keras.layers import Input, Flatten, Dense
 
-from astroNN.datasets import galaxy10
-from astroNN.datasets.galaxy10 import galaxy10cls_lookup
+#from astroNN.datasets import galaxy10
+#from astroNN.datasets.galaxy10 import galaxy10cls_lookup
 
-from TestScattering2D import TestScattering2D
+from TestScattering2D import ReducedScattering2D, StarletScattering2D
 from data_processing import format_galaxies 
 from plotting import plot_features
 
 # None = no scattering
 
-ScaNet = TestScattering2D
+ScaNet = StarletScattering2D
 
 
 #================================================
 label_list = ['Disk, Face-on, No Spiral', 'Smooth, Completely round', 'Smooth, in-between round', 'Smooth, Cigar shaped', 'Disk, Edge-on, Rounded Bulge', 'Disk, Edge-on, Boxy Bulge', 
             'Disk, Edge-on, No Bulge','Disk, Face-on, Tight Spiral', 'Disk, Face-on, Medium Spiral', 'Disk, Face-on, Loose Spiral']
 
-images, labels = galaxy10.load_data()
+#images, labels = galaxy10.load_data()
+
+with h5py.File('data/Galaxy10.h5', 'r') as F:
+    images = np.array(F['images'])
+    labels = np.array(F['ans'])
+labels = labels.astype(np.intc)
+images = images.astype(np.intc)
 
 split1 = 800#int(len(labels)*9/10.)
 split2 = split1+800#-1
@@ -48,18 +55,29 @@ x_test_clean  = format_galaxies(x_test, threshold = 0.3, min_size = 100, margin 
 
 #================================================
 
-inputs = Input(shape=(dim_x, dim_y))
-J,L = 3,8
-print("Using J = {0} scales, L = {1} angles".format(J,L))
-scanet = ScaNet(J=J, L=L)
-x     = scanet(inputs)
-model = Model(inputs, x)
-model.compile()
+if ScaNet == ReducedScattering2D:
+    J,L = 3,8
+    inputs = Input(shape=(dim_x, dim_y))
+    print("Using J = {0} scales, L = {1} angles".format(J,L))
+    scanet = ScaNet(J=J, L=L)
+    x     = scanet(inputs)
+    model = Model(inputs, x)
+    model.compile()
+    print("Now predicting")
+    feature_matrix = model.predict(x_train_clean)
+    feature_labels = scanet.labels(inputs)
 
-feature_labels = scanet.labels(inputs)
+else:
+    J = 3
+    print("Using J = {0} scales".format(J))
+    scanet = ScaNet(J=J)
+    feature_matrix = scanet.predict(x_train_clean)
+    feature_labels = scanet.labels()
 
-print("Now predicting")
-feature_matrix = model.predict(x_train_clean)
+
+
+
+
 n_output_coeffs = feature_matrix.shape[1]
 print("ScaNet has {0} output coefficients with dimension {1}x{2}".format(n_output_coeffs,feature_matrix.shape[2],feature_matrix.shape[3]))
 

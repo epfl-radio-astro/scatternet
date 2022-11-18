@@ -130,3 +130,6 @@ dmypy.json
 
 # Code outputs
 *.png
+
+# code inputs
+data/*
