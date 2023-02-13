@@ -3,18 +3,17 @@ import pywt
 from scipy.fft import fft2, ifft2
 import tensorflow as tf
 from kymatio.keras import Scattering2D
-#from kymatio.scattering2d.frontend.keras_frontend import ScatteringKeras2D
-from scattering_models import angle_avg_scattering
+from scatternet.kymatioex.scattering_models import angle_avg_scattering
 
 #from utils import FFT
 #from LiSA.modules.util.wavelets import StarletTransform
-from iuwt import iuwt_decomposition
+from scatternet.utils.iuwt import iuwt_decomposition
 
 '''
 A subclass of the kymatio Scattering2D designed to easily enable extensions in tensorflow.
 Explicitly combines the class interface with the tensorflow backend. 
 '''
-class TestScattering2D(Scattering2D):
+class ExtendedScattering2D(Scattering2D):
   def __init__(self, J, L=8, max_order=2, pre_pad=False): 
         Scattering2D.__init__(self, J, L, max_order, pre_pad)  
 
@@ -75,49 +74,16 @@ class TestScattering2D(Scattering2D):
 
           return S
 
-class MorletScattering2D(TestScattering2D):
+class ReducedMorletScattering2D(ExtendedScattering2D):
     def __init__(self, J, L=8, max_order=2, pre_pad=False): 
-        TestScattering2D.__init__(self, J, L, max_order, pre_pad)
-
+        ExtendedScattering2D.__init__(self, J, L, max_order, pre_pad)
 
     def _scattering_func(self, x, **kwargs):
       return angle_avg_scattering(x, **kwargs)
 
-class ShapeletScattering2D(TestScattering2D):
+class StarletScattering2D(ExtendedScattering2D):
     def __init__(self, J, max_order=2, pre_pad=False): 
-        TestScattering2D.__init__(self, J, 1, max_order, pre_pad)
-        self.J = J
-
-    def labels(self):
-      return [j for j in range(self.J + self.J*self.J)]
-
-    def _scattering_func(self, x, **kwargs):
-      out_S = []
-      out_S_0 = []
-      out_S_1 = []
-      #for n in range(self.S.max_order):
-      order0 = iuwt_decomposition(x,self.J)
-      out_S_0.append(order0)
-      for j in range(self.J):
-        order1 = iuwt_decomposition(order0[j,:,:],self.J)
-        out_S_1.append(order1)
-      out_S.extend(out_S_0)
-      out_S.extend(out_S_1)
-
-      out_S = np.concatenate([s for s in out_S])
-
-      #starlet = StarletTransform(num_procs=1)
-      #coeffs = starlet.decompose(x,self.J)
-      return out_S
-
-    def predict(self, x):
-      filters = np.stack([self._scattering_func(x[i,:,:]) for i in range(x.shape[0])],0)
-      print(filters.shape)
-      return filters
-
-class StarletScattering2D(TestScattering2D):
-    def __init__(self, J, max_order=2, pre_pad=False): 
-        TestScattering2D.__init__(self, J, 1, max_order, pre_pad)
+        ExtendedScattering2D.__init__(self, J, 1, max_order, pre_pad)
         self.J = J
 
     def labels(self):

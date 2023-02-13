@@ -1,4 +1,8 @@
-
+'''
+Galaxy morphology classification on the Galaxy10 DECals Dataset:
+https://astronn.readthedocs.io/en/latest/galaxy10.html
+Follow the instructions at the link above to download Galaxy10.h5
+'''
 import sys
 import h5py
 import matplotlib.pyplot as plt
@@ -6,7 +10,6 @@ import numpy as np
 import tensorflow as tf
 
 from tensorflow.keras.models import Model
-#import tensorflow_transform as tft
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import RandomizedSearchCV
@@ -16,12 +19,11 @@ from sklearn.utils.fixes import loguniform
 
 from tensorflow.keras.layers import Input, Flatten, Dense
 
-from TestScattering2D import MorletScattering2D, StarletScattering2D, ShapeletScattering2D
-from data_processing import format_galaxies, check_data_processing
-from plotting import plot_features
+from scatternet.kymatioex.ExtendedScattering2D import ReducedMorletScattering2D, StarletScattering2D
+from scatternet.utils.data_processing import format_galaxies, check_data_processing
+from scatternet.utils.plotting import plot_features
 
 ScaNet = ReducedMorletScattering2D
-
 
 #================================================
 label_list = ['Disk, Face-on, No Spiral', 'Smooth, Completely round', 'Smooth, in-between round', 'Smooth, Cigar shaped', 'Disk, Edge-on, Rounded Bulge', 'Disk, Edge-on, Boxy Bulge', 
