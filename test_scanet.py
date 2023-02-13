@@ -16,16 +16,11 @@ from sklearn.utils.fixes import loguniform
 
 from tensorflow.keras.layers import Input, Flatten, Dense
 
-#from astroNN.datasets import galaxy10
-#from astroNN.datasets.galaxy10 import galaxy10cls_lookup
-
-from TestScattering2D import ReducedScattering2D, StarletScattering2D
-from data_processing import format_galaxies 
+from TestScattering2D import MorletScattering2D, StarletScattering2D, ShapeletScattering2D
+from data_processing import format_galaxies, check_data_processing
 from plotting import plot_features
 
-# None = no scattering
-
-ScaNet = StarletScattering2D
+ScaNet = ReducedMorletScattering2D
 
 
 #================================================
@@ -49,31 +44,25 @@ x_test,  y_test = images[split1:split2,:,:], labels[split1:split2]
 keys, unique_indices = np.unique(y_train, return_index = True)
 (n_train_samples, dim_x, dim_y, __), n_classes = x_train.shape, keys.size
 
-x_train_clean = format_galaxies(x_train, threshold = 0.3, min_size = 100, margin = 2)
-x_test_clean  = format_galaxies(x_test, threshold = 0.3, min_size = 100, margin = 2)
+x_train_clean = format_galaxies(x_train, threshold = 0.1, min_size = 100, margin = 2)
+x_test_clean  = format_galaxies(x_test, threshold = 0.1, min_size = 100, margin = 2)
 
+#check_data_processing(x_train, x_train_clean, y_train, unique_indices, label_list)
+#sys.exit()
 
 #================================================
 
-if ScaNet == ReducedScattering2D:
-    J,L = 3,8
-    inputs = Input(shape=(dim_x, dim_y))
-    print("Using J = {0} scales, L = {1} angles".format(J,L))
-    scanet = ScaNet(J=J, L=L)
-    x     = scanet(inputs)
-    model = Model(inputs, x)
-    model.compile()
-    print("Now predicting")
-    feature_matrix = model.predict(x_train_clean)
-    feature_labels = scanet.labels(inputs)
 
-else:
-    J = 3
-    print("Using J = {0} scales".format(J))
-    scanet = ScaNet(J=J)
-    feature_matrix = scanet.predict(x_train_clean)
-    feature_labels = scanet.labels()
-
+J,L = 3,8
+inputs = Input(shape=(dim_x, dim_y))
+print("Using J = {0} scales, L = {1} angles".format(J,L))
+scanet = ScaNet(J=J, L=L)
+x = scanet(inputs)
+model = Model(inputs, x)
+model.compile()
+print("Now predicting")
+feature_matrix = model.predict(x_train_clean)
+feature_labels = scanet.labels(inputs)
 
 
 
@@ -117,7 +106,7 @@ for idx, gal in enumerate(unique_indices):
 plt.show()'''
 plot_features(x_train, x_train_clean, y_train, feature_matrix, unique_indices, feature_labels, label_list)
 #plot_features(x_train, x_train_clean, y_train, feature_matrix, np.where(y_train==0), feature_labels, label_list)
-sys.exit()
+#sys.exit()
 
 n_features = feature_matrix.shape[1]*feature_matrix.shape[2]*feature_matrix.shape[3]
 n_components = min(n_features/2., 150)
