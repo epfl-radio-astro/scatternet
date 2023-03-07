@@ -4,3 +4,4 @@ kymatio
 scikit-image
 h5py
 PyQt5
+lenstronomy # for shapelets

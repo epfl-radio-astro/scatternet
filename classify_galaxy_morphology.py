@@ -17,13 +17,14 @@ from sklearn.model_selection import RandomizedSearchCV
 from sklearn import svm, metrics
 from sklearn.utils.fixes import loguniform
 
-from tensorflow.keras.layers import Input, Flatten, Dense
+from tensorflow.keras.layers import Input, Flatten, Dense, AveragePooling2D, Reshape
 
-from scatternet.kymatioex.ExtendedScattering2D import ReducedMorletScattering2D, StarletScattering2D
+from scatternet.kymatioex.ExtendedScattering2D import ReducedMorletScattering2D, StarletScattering2D, ShapeletScattering2D
 from scatternet.utils.data_processing import format_galaxies, check_data_processing
 from scatternet.utils.plotting import plot_features
 
-ScaNet = ReducedMorletScattering2D
+ScaNet = ShapeletScattering2D
+
 
 #================================================
 label_list = ['Disk, Face-on, No Spiral', 'Smooth, Completely round', 'Smooth, in-between round', 'Smooth, Cigar shaped', 'Disk, Edge-on, Rounded Bulge', 'Disk, Edge-on, Boxy Bulge', 
@@ -56,21 +57,31 @@ x_test_clean  = format_galaxies(x_test, threshold = 0.1, min_size = 100, margin 
 
 
 J,L = 3,8
-inputs = Input(shape=(dim_x, dim_y))
+scanet = ScaNet( 5,5)
 print("Using J = {0} scales, L = {1} angles".format(J,L))
-scanet = ScaNet(J=J, L=L)
-x = scanet(inputs)
+
+inputs = Input(shape=(dim_x, dim_y))
+
+#scanet = ScaNet(J=J, L=L)
+
+x = Reshape([dim_x,dim_y,1])(inputs)
+x = AveragePooling2D((2,2), name = "avgpool")(x)
+x = Reshape([int(dim_x/2),int(dim_y/2)])(x)
+x = scanet(x)
+x = tf.math.reduce_sum(x,axis=(2,3))
 model = Model(inputs, x)
 model.compile()
+model.summary()
 print("Now predicting")
 feature_matrix = model.predict(x_train_clean)
-feature_labels = scanet.labels(inputs)
-
-
+#feature_labels = scanet.labels(inputs)
+feature_labels = scanet.labels()
 
 
 n_output_coeffs = feature_matrix.shape[1]
-print("ScaNet has {0} output coefficients with dimension {1}x{2}".format(n_output_coeffs,feature_matrix.shape[2],feature_matrix.shape[3]))
+
+
+print("ScaNet has {0} output coefficients with dimension {1}".format(n_output_coeffs,feature_matrix.shape))
 
 #========================================================
 '''plt.clf()
@@ -106,15 +117,16 @@ for idx, gal in enumerate(unique_indices):
         axs[idx,i+2].set_xticklabels([])
 
 plt.show()'''
-plot_features(x_train, x_train_clean, y_train, feature_matrix, unique_indices, feature_labels, label_list)
+#plot_features(x_train, x_train_clean, y_train, feature_matrix, unique_indices, feature_labels, label_list)
 #plot_features(x_train, x_train_clean, y_train, feature_matrix, np.where(y_train==0), feature_labels, label_list)
 #sys.exit()
 
-n_features = feature_matrix.shape[1]*feature_matrix.shape[2]*feature_matrix.shape[3]
+feature_matrix = feature_matrix.reshape(feature_matrix.shape[0],-1)
+n_features = feature_matrix.shape[-1]
 n_components = min(n_features/2., 150)
 print("doing {0}-component pca on {1} features".format(n_components, n_features))
 pca = PCA(n_components)
-X_scaled = StandardScaler().fit_transform(feature_matrix.reshape(feature_matrix.shape[0],-1))
+X_scaled = StandardScaler().fit_transform(feature_matrix)
 X_pca = pca.fit_transform(X_scaled)
 X_pca = X_pca[:,:50]
 
