@@ -152,7 +152,13 @@ class ShapeletBasis(ShapeletSet):
         return base_list
 
 class ShapeletScattering2D(ExtendedScattering2D):
+
     def __init__(self,  beta, n_max, max_order=2, pre_pad=False): 
+        """
+        :param beta: shapelet scale
+        :param n_max: maximum polynomial order in Hermite polynomial
+        """
+
         ExtendedScattering2D.__init__(self, 1, 1, max_order, pre_pad)
         self.beta = beta
         self.n_max = n_max

@@ -1,135 +1,121 @@
+import sys
 import h5py
-import numpy as np
-from lenstronomy.LightModel.Profiles.shapelets import ShapeletSet
-from scipy import ndimage
 import matplotlib.pyplot as plt
-import lenstronomy.Util.util as util
-import lenstronomy.Util.image_util as image_util
+import numpy as np
+
+import tensorflow as tf
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Input, Flatten, Dense, AveragePooling2D, Reshape
+
+from scatternet.kymatioex.ExtendedScattering2D import ShapeletScattering2D
+from scatternet.utils.data_processing import format_galaxies, check_data_processing
+
+def plot_shapelets(s):
+
+    print('test',s.shape)
+    n, nx, ny = s.shape
+
+    n_rt = int(n**0.5)
+    if n != n_rt*n_rt:
+        n_rt += 1
+
+    fig, axs = plt.subplots(n_rt,n_rt, figsize=(10, 6))
+    axs = axs.flatten()
+    plt.tick_params(left = False, bottom=False)
+    #plt.tight_layout()
+    #fig.subplots_adjust(hspace=0, wspace= 0, bottom = 0.01, left = 0.25, top = 0.7,  right = 0.99)
 
 
-class ShapeletBasis(ShapeletSet):
-    def __init__(self): 
-        ShapeletSet.__init__(self)   
-
-    def getbasis(self, x, y, n_max, beta, deltaPix, center_x=0, center_y=0):
-        """
-        decomposes an image into the shapelet coefficients in same order as for the function call
-        :param x:
-        :param y:
-        :param n_max:
-        :param beta:
-        :param center_x:
-        :param center_y:
-        :return:
-        """
-        num_param = int((n_max+1)*(n_max+2)/2)
-        print(len(x), len(y))
-        base_list = np.zeros( (num_param, len(x)))
-        amp_norm = 1./beta**2*deltaPix**2
-        n1 = 0
-        n2 = 0
-        H_x, H_y = self.shapelets.pre_calc(x, y, beta, n_max, center_x, center_y)
-        for i in range(num_param):
-            kwargs_source_shapelet = {'center_x': center_x, 'center_y': center_y, 'n1': n1, 'n2': n2, 'beta': beta, 'amp': amp_norm}
-            base = self.shapelets.function(H_x, H_y, **kwargs_source_shapelet)
-            base_list[i,:] = base
-            if n1 == 0:
-                n1 = n2 + 1
-                n2 = 0
-            else:
-                n1 -= 1
-                n2 += 1
-        return base_list
+    for i in range(n):
+        axs[i].imshow(s[i,:,:])
 
 
 
-def shapeletanalysis(img):
-    # we slightly convolve the image with a Gaussian convolution kernel of a few pixels (optional)
-    #sigma = 5
-    print(img.shape[0]*img.shape[0],'input pixels')
-    #ngc_conv = ndimage.filters.gaussian_filter(img, sigma, mode='nearest', truncate=6)
-    ngc_conv = img
-
-    # we now degrate the pixel resoluton by a factor.
-    # This reduces the data volume and increases the spead of the Shapelet decomposition
-    factor = 1  # lower resolution of image with a given factor
-    numPix_large = int(len(ngc_conv)/factor)
-    n_new = int((numPix_large-1)*factor)
-    ngc_cut = ngc_conv[0:n_new,0:n_new]
-
-    print('npix', numPix_large-1)
-    x, y = util.make_grid(numPix=numPix_large-1, deltapix=1)  # make a coordinate grid
-    ngc_data_resized = image_util.re_size(ngc_cut, factor)  # re-size image to lower resolution
+    #n_output_coeffs = feature_matrix.shape[1]
 
 
-    print(x,y)
-    # now we come to the Shapelet decomposition
-    # we turn the image in a single 1d array
-    image_1d = util.image2array(ngc_data_resized)  # map 2d image in 1d data array
+    # for idx, gal in enumerate(indices):
 
-    #image_1d = util.image2array()  # map 2d image in 1d data array
+    #     if idx == 0:
+    #         v = axs[idx,0].set_title("Original input image", fontsize=10)
+    #         v1 = axs[idx,1].set_title("Cleaned input image", fontsize=10)
+    #         v.set_rotation(70)
+    #         v1.set_rotation(70)
+    #         for i,f in enumerate(feature_labels):
+    #             vi = axs[idx,i+2].set_title(f, fontsize=10)
+    #             vi.set_rotation(70)
+    #     axs[idx,0].imshow(x0[gal,:,:])
+    #     axs[idx,0].set_yticklabels([])
+    #     axs[idx,0].set_xticklabels([])
+    #     h = axs[idx,0].set_ylabel( label_list[y_in[gal]],fontsize=10,loc = 'top')
+    #     h.set_rotation(-10)
 
-    # we define the shapelet basis set we want the image to decompose in
-    n_max = 10  # choice of number of shapelet basis functions, 150 is a high resolution number, but takes long
-    beta = 10  # shapelet scale parameter (in units of resized pixels)
+    #     axs[idx,1].imshow(x_in[gal,:,:])
+    #     axs[idx,1].set_yticklabels([])
+    #     axs[idx,1].set_xticklabels([])
+        
 
-    shapeletSet = ShapeletBasis()
-    basis_ngc = shapeletSet.getbasis(x, y, n_max, beta, 1., center_x=0, center_y=0) 
-
-    print( [b.shape for b in basis_ngc])
-
-    coeff_ngc = [np.sum(b*image_1d) for b in basis_ngc]
-    print(image_1d.shape)
-    print( [b.shape for b in coeff_ngc])
-    print(len(coeff_ngc), 'number of coefficients')  # number of coefficients
-
-    print(coeff_ngc)
-
-    # reconstruct NGC1300 with the shapelet coefficients
-    image_reconstructed = shapeletSet.function(x, y, coeff_ngc, n_max, beta, center_x=0, center_y=0)
-    # turn 1d array back into 2d image
-    image_reconstructed_2d = util.array2image(image_reconstructed)  # map 1d data vector in 2d image
-
-    f, axes = plt.subplots(1, 4, figsize=(16, 4), sharex=False, sharey=False)
-
-    ax = axes[0]
-    im = ax.matshow(img, origin='lower')
-    ax.set_title("original image")
-    ax.get_xaxis().set_visible(False)
-    ax.get_yaxis().set_visible(False)
-    ax.autoscale(False)
-
-    ax = axes[1]
-    im = ax.matshow(ngc_conv, origin='lower')
-    ax.set_title("convolved image")
-    ax.get_xaxis().set_visible(False)
-    ax.get_yaxis().set_visible(False)
-    ax.autoscale(False)
-
-    ax = axes[2]
-    im = ax.matshow(ngc_data_resized, origin='lower')
-    ax.set_title("resized")
-    ax.get_xaxis().set_visible(False)
-    ax.get_yaxis().set_visible(False)
-    ax.autoscale(False)
-
-    ax = axes[3]
-    im = ax.matshow(image_reconstructed_2d, origin='lower')
-    ax.set_title("reconstructed")
-    ax.get_xaxis().set_visible(False)
-    ax.get_yaxis().set_visible(False)
-    ax.autoscale(False)
+    #     for i,f in enumerate(range(n_output_coeffs)):
+    #         axs[idx,i+2].imshow(feature_matrix[gal,f,:,:])
+    #         axs[idx,i+2].set_yticklabels([])
+    #         axs[idx,i+2].set_xticklabels([])
 
     plt.show()
 
+
+label_list = ['Disk, Face-on, No Spiral', 'Smooth, Completely round', 'Smooth, in-between round', 'Smooth, Cigar shaped', 'Disk, Edge-on, Rounded Bulge', 'Disk, Edge-on, Boxy Bulge', 
+            'Disk, Edge-on, No Bulge','Disk, Face-on, Tight Spiral', 'Disk, Face-on, Medium Spiral', 'Disk, Face-on, Loose Spiral']
+
+#images, labels = galaxy10.load_data()
 
 with h5py.File('data/Galaxy10.h5', 'r') as F:
     images = np.array(F['images'])
     labels = np.array(F['ans'])
 labels = labels.astype(np.intc)
 images = images.astype(np.intc)
-images = np.sum(images / 255./3., axis = -1)
 
-shapeletanalysis(images[0])
-shapeletanalysis(images[8])
+keys, unique_indices = np.unique(labels, return_index = True)
+(n_train_samples, dim_x, dim_y, __), n_classes = images.shape, keys.size
 
+images_clean = format_galaxies(images, threshold = 0.1, min_size = 100, margin = 2)
+
+# parameters are beta and n
+scatternet = ShapeletScattering2D( 10,20)
+
+inputs = Input(shape=(dim_x, dim_y))
+
+#scanet = ScaNet(J=J, L=L)
+
+x = scatternet(inputs)
+shapelet_filters = scatternet.filters
+print(shapelet_filters.shape)
+
+plot_shapelets(shapelet_filters)
+print(shapelet_filters.shape, images_clean.shape )
+
+print(np.max(shapelet_filters), np.max(images_clean))
+
+
+#plot_shapelets(shapelet_filters[:,:,:]*images_clean[None, 0,:,:])
+#plot_shapelets(shapelet_filters[:,:,:]*images_clean[None, 1,:,:])
+
+coeffs = np.sum(shapelet_filters*images_clean[None, 0,:,:], axis = (1,2))
+print(coeffs.shape)
+images_reco = np.sum(coeffs[:,None,None]*shapelet_filters,axis = 0)
+
+fig, axs = plt.subplots(2,1, figsize=(10, 6))
+axs = axs.flatten()
+axs[0].imshow(images_clean[0,:,:])
+axs[1].imshow(images_reco)
+plt.show()
+
+
+sys.exit()
+
+model = Model(inputs, x)
+model.summary()
+
+print("Now predicting")
+feature_matrix = model.predict(images_clean[0:10,:,:])
+#feature_labels = scanet.labels(inputs)
+feature_labels = scatternet.labels()

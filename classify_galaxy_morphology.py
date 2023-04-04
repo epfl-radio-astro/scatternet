@@ -10,8 +10,10 @@ import numpy as np
 import tensorflow as tf
 
 from tensorflow.keras.models import Model
+from keras.utils import np_utils
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import RandomizedSearchCV
 #from sklearn.cluster import KMeans
 from sklearn import svm, metrics
@@ -38,8 +40,8 @@ with h5py.File('data/Galaxy10.h5', 'r') as F:
 labels = labels.astype(np.intc)
 images = images.astype(np.intc)
 
-split1 = 800#int(len(labels)*9/10.)
-split2 = split1+800#-1
+split1 = 8000#int(len(labels)*9/10.)
+split2 = split1+8000#-1
 
 x_train, y_train = images[0:split1,:,:], labels[0:split1]
 x_test,  y_test = images[split1:split2,:,:], labels[split1:split2]
@@ -70,8 +72,8 @@ x = Reshape([int(dim_x/2),int(dim_y/2)])(x)
 x = scanet(x)
 x = tf.math.reduce_sum(x,axis=(2,3))
 model = Model(inputs, x)
-model.compile()
 model.summary()
+
 print("Now predicting")
 feature_matrix = model.predict(x_train_clean)
 #feature_labels = scanet.labels(inputs)
