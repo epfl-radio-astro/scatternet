@@ -58,7 +58,7 @@ dummy_y = np_utils.to_categorical(encoded_Y)
 
 def create_model():
     J,L = 3,8
-    scanet = ScaNet( 5,5)
+    scanet = ScaNet( 10,20, max_order = 1)
     print("Using J = {0} scales, L = {1} angles".format(J,L))
     inputs = Input(shape=(dim_x, dim_y))
     #scanet = ScaNet(J=J, L=L)

@@ -201,6 +201,7 @@ class ShapeletScattering2D(ExtendedScattering2D):
       for i, b1 in enumerate(self.filters):
         order1 = b1*x
         out_S_1.append(order1)
+        if self.max_order < 2: continue
         for j, b2 in enumerate(self.filters):
           order2 = b2*order1
           out_S_2.append(order2)
