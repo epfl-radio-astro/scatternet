@@ -80,7 +80,7 @@ keys, unique_indices = np.unique(labels, return_index = True)
 images_clean = format_galaxies(images, threshold = 0.1, min_size = 100, margin = 2)
 
 # parameters are beta and n
-scatternet = ShapeletScattering2D( 10,20)
+scatternet = ShapeletScattering2D( 10,5)
 
 inputs = Input(shape=(dim_x, dim_y))
 
@@ -88,19 +88,19 @@ inputs = Input(shape=(dim_x, dim_y))
 
 x = scatternet(inputs)
 shapelet_filters = scatternet.filters
-print(shapelet_filters.shape)
+print("filters shape:", shapelet_filters.shape)
 
-plot_shapelets(shapelet_filters)
-print(shapelet_filters.shape, images_clean.shape )
+#plot_shapelets(shapelet_filters)
+#print(shapelet_filters.shape, images_clean.shape )
 
-print(np.max(shapelet_filters), np.max(images_clean))
+#print(np.max(shapelet_filters), np.max(images_clean))
 
 
 #plot_shapelets(shapelet_filters[:,:,:]*images_clean[None, 0,:,:])
 #plot_shapelets(shapelet_filters[:,:,:]*images_clean[None, 1,:,:])
 
 coeffs = np.sum(shapelet_filters*images_clean[None, 0,:,:], axis = (1,2))
-print(coeffs.shape)
+print("coeffs:", coeffs.shape)
 images_reco = np.sum(coeffs[:,None,None]*shapelet_filters,axis = 0)
 
 fig, axs = plt.subplots(2,1, figsize=(10, 6))

@@ -58,13 +58,14 @@ dummy_y = np_utils.to_categorical(encoded_Y)
 
 def create_model():
     J,L = 3,8
-    scanet = ScaNet( 10,20, max_order = 1)
+    scanet = ScaNet( 10,5, max_order = 1)
     print("Using J = {0} scales, L = {1} angles".format(J,L))
     inputs = Input(shape=(dim_x, dim_y))
     #scanet = ScaNet(J=J, L=L)
-    x = Reshape([dim_x,dim_y,1])(inputs)
-    x = AveragePooling2D((2,2), name = "avgpool")(x)
-    x = Reshape([int(dim_x/2),int(dim_y/2)])(x)
+    x = inputs
+    #x = Reshape([dim_x,dim_y,1])(inputs)
+    #x = AveragePooling2D((2,2), name = "avgpool")(x)
+    #x = Reshape([int(dim_x/2),int(dim_y/2)])(x)
     x = scanet(x)
     x = tf.math.reduce_sum(x,axis=(2,3))
     #x = Dense(64, activation='relu')(x)

@@ -40,8 +40,8 @@ with h5py.File('data/Galaxy10.h5', 'r') as F:
 labels = labels.astype(np.intc)
 images = images.astype(np.intc)
 
-split1 = 8000#int(len(labels)*9/10.)
-split2 = split1+8000#-1
+split1 = 800#int(len(labels)*9/10.)
+split2 = split1+800#-1
 
 x_train, y_train = images[0:split1,:,:], labels[0:split1]
 x_test,  y_test = images[split1:split2,:,:], labels[split1:split2]
@@ -59,25 +59,29 @@ x_test_clean  = format_galaxies(x_test, threshold = 0.1, min_size = 100, margin 
 
 
 J,L = 3,8
-scanet = ScaNet( 5,5)
+scanet = ScaNet( 10,5, max_order = 1)
 print("Using J = {0} scales, L = {1} angles".format(J,L))
 
 inputs = Input(shape=(dim_x, dim_y))
 
 #scanet = ScaNet(J=J, L=L)
-
-x = Reshape([dim_x,dim_y,1])(inputs)
-x = AveragePooling2D((2,2), name = "avgpool")(x)
-x = Reshape([int(dim_x/2),int(dim_y/2)])(x)
+x = inputs
+#x = Reshape([dim_x,dim_y,1])(x)
+#x = AveragePooling2D((2,2), name = "avgpool")(x)
+#x = Reshape([int(dim_x/2),int(dim_y/2)])(x)
 x = scanet(x)
 x = tf.math.reduce_sum(x,axis=(2,3))
 model = Model(inputs, x)
 model.summary()
 
+print("filters shape:", scanet.filters.shape)
+
 print("Now predicting")
 feature_matrix = model.predict(x_train_clean)
 #feature_labels = scanet.labels(inputs)
 feature_labels = scanet.labels()
+
+
 
 
 n_output_coeffs = feature_matrix.shape[1]
@@ -125,7 +129,7 @@ plt.show()'''
 
 feature_matrix = feature_matrix.reshape(feature_matrix.shape[0],-1)
 n_features = feature_matrix.shape[-1]
-n_components = min(n_features/2., 150)
+n_components = int(min(n_features/2, 150))
 print("doing {0}-component pca on {1} features".format(n_components, n_features))
 pca = PCA(n_components)
 X_scaled = StandardScaler().fit_transform(feature_matrix)

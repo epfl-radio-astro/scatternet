@@ -133,3 +133,6 @@ dmypy.json
 
 # code inputs
 data/*
+
+# misc
+.DS_store

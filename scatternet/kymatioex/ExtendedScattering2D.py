@@ -100,11 +100,14 @@ class StarletScattering2D(ExtendedScattering2D):
       #for n in range(self.S.max_order):
       order0 = iuwt_decomposition(x,self.J)
       out_S_0.append(order0)
-      for j in range(self.J):
-        order1 = iuwt_decomposition(order0[j,:,:],self.J)
-        out_S_1.append(order1)
+      if self.max_order >= 1:
+        for j in range(self.J):
+          order1 = iuwt_decomposition(order0[j,:,:],self.J)
+          out_S_1.append(order1)
+
       out_S.extend(out_S_0)
-      out_S.extend(out_S_1)
+
+      if self.max_order >= 1: out_S.extend(out_S_1)
 
       out_S = np.concatenate([s for s in out_S])
 
@@ -184,6 +187,7 @@ class ShapeletScattering2D(ExtendedScattering2D):
 
       for i, b1 in enumerate(self.filters):
         out_S_1.append('{0}'.format(i+1))
+        if self.max_order < 2: continue
         for j, b2 in enumerate(self.filters):
           out_S_1.append('{0}-{1}'.format(i+1,j+1))
       out_S.extend(out_S_0)
@@ -209,7 +213,7 @@ class ShapeletScattering2D(ExtendedScattering2D):
       out_S.extend(out_S_1)
       out_S.extend(out_S_2)
       out_S = tf.stack([s for s in out_S],-3)
-      #out_S = tf.stack([s for s in out_S],-1)
+
       return out_S
 
     def predict(self, x):
