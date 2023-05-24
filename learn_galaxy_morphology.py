@@ -25,7 +25,12 @@ from scatternet.kymatioex.ExtendedScattering2D import ReducedMorletScattering2D,
 from scatternet.utils.data_processing import format_galaxies, check_data_processing
 from scatternet.utils.plotting import plot_features
 
-ScaNet = ShapeletScattering2D
+shapelet = False
+
+if shapelet:
+    ScaNet = ShapeletScattering2D
+else:
+    ScaNet = ReducedMorletScattering2D
 
 
 #================================================
@@ -57,17 +62,25 @@ dummy_y = np_utils.to_categorical(encoded_Y)
 #================================================
 
 def create_model():
-    J,L = 3,8
-    scanet = ScaNet( 10,5, max_order = 1)
-    print("Using J = {0} scales, L = {1} angles".format(J,L))
+
     inputs = Input(shape=(dim_x, dim_y))
     #scanet = ScaNet(J=J, L=L)
     x = inputs
-    #x = Reshape([dim_x,dim_y,1])(inputs)
-    #x = AveragePooling2D((2,2), name = "avgpool")(x)
-    #x = Reshape([int(dim_x/2),int(dim_y/2)])(x)
-    x = scanet(x)
-    x = tf.math.reduce_sum(x,axis=(2,3))
+
+    J,L = 3,8
+    if shapelet:
+        scanet = ScaNet( 10,5, max_order = 1)
+        print("Using J = {0} scales, L = {1} angles".format(J,L))
+
+        #x = Reshape([dim_x,dim_y,1])(inputs)
+        #x = AveragePooling2D((2,2), name = "avgpool")(x)
+        #x = Reshape([int(dim_x/2),int(dim_y/2)])(x)
+        x = scanet(x)
+        x = tf.math.reduce_sum(x,axis=(2,3))
+    else:
+        scanet = ScaNet( 3,8)
+        x = scanet(x)
+        x = Flatten()(x)
     #x = Dense(64, activation='relu')(x)
     x = Dense(len(unique_indices), activation='sigmoid')(x)
     model = Model(inputs, x)

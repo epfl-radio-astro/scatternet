@@ -5,6 +5,7 @@ from skimage import morphology
 
 def format_galaxies(x, threshold = 0.3, min_size = 100, margin = 5):
     # collapse color channels
+
     x = x / 255./3.
     x = np.sum(x, axis = -1)
 

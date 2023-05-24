@@ -21,11 +21,11 @@ from sklearn.utils.fixes import loguniform
 
 from tensorflow.keras.layers import Input, Flatten, Dense, AveragePooling2D, Reshape
 
-from scatternet.kymatioex.morlet2d import ReducedMorletScattering2D #StarletScattering2D, ShapeletScattering2D
+from scatternet.kymatioex.base3d import ExtendedScattering2D1D #StarletScattering2D, ShapeletScattering2D
 from scatternet.utils.data_processing import format_galaxies, check_data_processing
 from scatternet.utils.plotting import plot_features
 
-ScaNet = ReducedMorletScattering2D
+ScaNet = ExtendedScattering2D1D
 
 
 #================================================
@@ -34,23 +34,29 @@ label_list = ['Disk, Face-on, No Spiral', 'Smooth, Completely round', 'Smooth, i
 
 #images, labels = galaxy10.load_data()
 
+tf.keras.backend.set_image_data_format('channels_last')
+
 with h5py.File('data/Galaxy10.h5', 'r') as F:
     images = np.array(F['images'])
     labels = np.array(F['ans'])
 labels = labels.astype(np.intc)
 images = images.astype(np.intc)
+#channels first
+images = np.moveaxis(images, -1, 1)
 
 split1 = 800#int(len(labels)*9/10.)
 split2 = split1+800#-1
 
-x_train, y_train = images[0:split1,:,:], labels[0:split1]
-x_test,  y_test = images[split1:split2,:,:], labels[split1:split2]
+x_train, y_train = images[0:split1,...], labels[0:split1]
+x_test,  y_test = images[split1:split2,...], labels[split1:split2]
+
+print( x_train.shape)
 
 keys, unique_indices = np.unique(y_train, return_index = True)
-(n_train_samples, dim_x, dim_y, __), n_classes = x_train.shape, keys.size
+(n_train_samples, dim_z, dim_x, dim_y), n_classes = x_train.shape, keys.size
 
-x_train_clean = format_galaxies(x_train, threshold = 0.1, min_size = 100, margin = 2)
-x_test_clean  = format_galaxies(x_test, threshold = 0.1, min_size = 100, margin = 2)
+#x_train_clean = format_galaxies(x_train, threshold = 0.1, min_size = 100, margin = 2)
+#x_test_clean  = format_galaxies(x_test, threshold = 0.1, min_size = 100, margin = 2)
 
 #check_data_processing(x_train, x_train_clean, y_train, unique_indices, label_list)
 #sys.exit()
@@ -62,7 +68,7 @@ J,L = 3,8
 scanet = ScaNet( 3,8, max_order = 2)
 print("Using J = {0} scales, L = {1} angles".format(J,L))
 
-inputs = Input(shape=(dim_x, dim_y))
+inputs = Input(shape=(dim_z, dim_x, dim_y))
 
 #scanet = ScaNet(J=J, L=L)
 x = inputs
@@ -77,7 +83,7 @@ model.summary()
 #print("filters shape:", scanet.filters.shape)
 
 print("Now predicting")
-feature_matrix = model.predict(x_train_clean)
+feature_matrix = model.predict(x_train)
 feature_labels = scanet.labels(inputs)
 #feature_labels = scanet.labels()
 
