@@ -76,11 +76,12 @@ class ExtendedScattering2D1D(Scattering2D):
 def standard_scattering(x, pad, unpad, backend, J, L, phi, psi, max_order,
         out_type='array', verbose = False):
     subsample_fourier = backend.subsample_fourier
-    modulus = backend.modulus
-    rfft = backend.rfft
-    ifft = backend.ifft
-    irfft = backend.irfft    
-    cdgmm = backend.cdgmm
+    modulus = backend.modulus          
+                  
+    rfft = lambda x: tf.signal.fft2d(x, name='fft2d')
+    ifft = lambda x: tf.signal.ifft2d(x, name='ifft2d')
+    irfft = lambda x: tf.math.real(tf.signal.ifft2d(x, name='irfft2d'))
+    #cdgmm = backend.cdgmm
     concatenate = backend.concatenate
 
     # Define lists for output.
@@ -91,7 +92,7 @@ def standard_scattering(x, pad, unpad, backend, J, L, phi, psi, max_order,
     U_0_c = rfft(U_r)
 
     # First low pass filter
-    U_1_c = cdgmm(U_0_c, phi['levels'][0])
+    U_1_c = U_0_c * phi['levels'][0]
     U_1_c = subsample_fourier(U_1_c, k=2 ** J)
 
     S_0 = irfft(U_1_c)
@@ -106,15 +107,15 @@ def standard_scattering(x, pad, unpad, backend, J, L, phi, psi, max_order,
         j1 = psi[n1]['j']
         theta1 = psi[n1]['theta']
 
-        U_1_c = cdgmm(U_0_c, psi[n1]['levels'][0])
+        U_1_c = U_0_c * psi[n1]['levels'][0]
         if j1 > 0:
             U_1_c = subsample_fourier(U_1_c, k=2 ** j1)
         U_1_c = ifft(U_1_c)
-        U_1_c = modulus(U_1_c)
+        U_1_c = modulus(U_1_c) #tf.abs(x)
         U_1_c = rfft(U_1_c)
 
         # Second low pass filter
-        S_1_c = cdgmm(U_1_c, phi['levels'][j1])
+        S_1_c = U_1_c * phi['levels'][j1]
         S_1_c = subsample_fourier(S_1_c, k=2 ** (J - j1))
 
         S_1_r = irfft(S_1_c)
