@@ -27,7 +27,6 @@ def remove_artifacts(im, threshold = 0.3, min_size = 100, margin = 5, normalize 
     return binary_img*im
 
 
-
 def flood_select(im, threshold = 0.3, min_size = 100, margin = 5, normalize = True):
     if normalize == True:
         im = im/np.max(im)

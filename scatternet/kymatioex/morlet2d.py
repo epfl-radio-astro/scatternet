@@ -3,14 +3,16 @@ import tensorflow as tf
 from .base2d import ExtendedScattering2D
 
 class ReducedMorletScattering2D(ExtendedScattering2D):
-    def __init__(self, J, L=8, max_order=2, pre_pad=False): 
+    def __init__(self, J, L=8, max_order=2, subsample = True, pre_pad=False): 
         ExtendedScattering2D.__init__(self, J, L, max_order, pre_pad)
+        self.subsample = subsample
+        self.lowpass = subsample
 
     def _scattering_func(self, x, **kwargs):
-      return angle_avg_scattering(x, **kwargs)
+      return angle_avg_scattering(x, self.subsample, self.lowpass, **kwargs)
 
 
-def angle_avg_scattering(x, pad, unpad, backend, J, L, phi, psi, max_order,
+def angle_avg_scattering(x, subsample, lowpass, pad, unpad, backend, J, L, phi, psi, max_order,
         out_type='array', verbose = False):
     subsample_fourier = backend.subsample_fourier
     modulus = backend.modulus
@@ -21,6 +23,11 @@ def angle_avg_scattering(x, pad, unpad, backend, J, L, phi, psi, max_order,
     concatenate = backend.concatenate
     mean = tf.reduce_mean
 
+    # for n1 in range(len(psi)):
+    #     print(psi[n1]['j'],psi[n1]['theta'], len(psi[n1]['levels']))
+    #     for l in psi[n1]['levels']:
+    #         print(l.shape)
+
     # Define lists for output.
     out_S_0, out_S_1, out_S_2 = [], [], []
 
@@ -29,9 +36,13 @@ def angle_avg_scattering(x, pad, unpad, backend, J, L, phi, psi, max_order,
     U_0_c = rfft(U_r)
 
     # First low pass filter
-    U_1_c = cdgmm(U_0_c, phi['levels'][0])
-    #U_1_c = subsample_fourier(U_1_c, k=2 ** J)
-    U_1_c = subsample_fourier(U_1_c, k=2 ** (J))
+    
+    if lowpass:
+        U_1_c = cdgmm(U_0_c, phi['levels'][0])
+    else:
+        U_1_c = U_0_c
+    if subsample:
+        U_1_c = subsample_fourier(U_1_c, k=2 ** J)
 
     S_0 = irfft(U_1_c)
     S_0 = unpad(S_0)
@@ -53,7 +64,7 @@ def angle_avg_scattering(x, pad, unpad, backend, J, L, phi, psi, max_order,
         theta1 = psi[n1]['theta']
 
         U_1_c = cdgmm(U_0_c, psi[n1]['levels'][0])
-        if j1 > 0:
+        if j1 > 0 and subsample:
             #U_1_c = subsample_fourier(U_1_c, k=2 ** j1)
             U_1_c = subsample_fourier(U_1_c, k=2 ** (j1))
         U_1_c = ifft(U_1_c)
@@ -61,8 +72,14 @@ def angle_avg_scattering(x, pad, unpad, backend, J, L, phi, psi, max_order,
         U_1_c = rfft(U_1_c)
 
         # Second low pass filter
-        S_1_c = cdgmm(U_1_c, phi['levels'][j1])
-        S_1_c = subsample_fourier(S_1_c, k=2 ** (J - j1))
+        if lowpass:
+            if subsample:
+                S_1_c = cdgmm(U_1_c, phi['levels'][j1])
+                S_1_c = subsample_fourier(S_1_c, k=2 ** (J - j1))
+            else:
+                S_1_c = cdgmm(U_1_c, phi['levels'][0])
+        else:
+            S_1_c = U_1_c
 
         S_1_r = irfft(S_1_c)
         S_1_r = unpad(S_1_r)
@@ -73,8 +90,8 @@ def angle_avg_scattering(x, pad, unpad, backend, J, L, phi, psi, max_order,
                         'theta': (theta1,),
                         'label':"Order 1 j={0},l={1}".format(j1,theta1)})
 
-        if max_order < 2:
-            continue
+        if max_order < 2: continue
+
         for n2 in range(len(psi)):
             j2 = psi[n2]['j']
             theta2 = psi[n2]['theta']
@@ -82,15 +99,26 @@ def angle_avg_scattering(x, pad, unpad, backend, J, L, phi, psi, max_order,
             if j2 <= j1:
                 continue
 
-            U_2_c = cdgmm(U_1_c, psi[n2]['levels'][j1])
-            U_2_c = subsample_fourier(U_2_c, k=2 ** (j2 - j1))
+
+            if subsample:
+                U_2_c = cdgmm(U_1_c, psi[n2]['levels'][j1])
+                U_2_c = subsample_fourier(U_2_c, k=2 ** (j2 - j1))
+            else:
+                U_2_c = cdgmm(U_1_c, psi[n2]['levels'][0])
+
             U_2_c = ifft(U_2_c)
             U_2_c = modulus(U_2_c)
             U_2_c = rfft(U_2_c)
 
             # Third low pass filter
-            S_2_c = cdgmm(U_2_c, phi['levels'][j2])
-            S_2_c = subsample_fourier(S_2_c, k=2 ** (J - j2))
+            if lowpass:
+                if subsample:
+                    S_2_c = cdgmm(U_2_c, phi['levels'][j2])
+                    S_2_c = subsample_fourier(S_2_c, k=2 ** (J - j2))
+                else:
+                    S_2_c = cdgmm(U_2_c, phi['levels'][0])
+            else:
+                S_2_c = U_2_c
 
             S_2_r = irfft(S_2_c)
             S_2_r = unpad(S_2_r)
