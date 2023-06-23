@@ -136,3 +136,4 @@ data/*
 
 # misc
 .DS_store
+model_checkpoint.*
