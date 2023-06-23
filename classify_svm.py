@@ -29,7 +29,6 @@ print("Using J = {0} scales, L = {1} angles".format(J,L))
 
 inputs = Input(shape=(d.dim_x, d.dim_y))
 
-#scanet = ScaNet(J=J, L=L)
 x = inputs
 #x = Reshape([dim_x,dim_y,1])(x)
 #x = AveragePooling2D((2,2), name = "avgpool")(x)
@@ -39,12 +38,9 @@ x = scanet(x)
 model = Model(inputs, x)
 model.summary()
 
-#print("filters shape:", scanet.filters.shape)
-
 print("Now predicting")
 feature_matrix = model.predict(d.x_train)
 feature_labels = scanet.labels(inputs)
-#feature_labels = scanet.labels()
 
 n_output_coeffs = feature_matrix.shape[1]
 
@@ -52,7 +48,7 @@ print("ScaNet has {0} output coefficients with dimension {1}".format(n_output_co
 
 #========================================================
 
-plot_features(d.x_train, d.x_train, d.y_train, feature_matrix, d.unique_indices, feature_labels, d.label_list)
+plot_features(d.x_train, d.x_train, d.y_train, feature_matrix, np.append(d.unique_indices,[30,40,50,60,70]), feature_labels, d.label_list)
 
 feature_matrix = np.sum(feature_matrix,axis=(2,3))
 
@@ -72,13 +68,13 @@ clf.fit(feature_matrix, d.y_train)
 check_classifier(clf, feature_matrix, d.y_train, d.label_list, "Scattering input, train")
 
 print("=== Now checking classificaition with scattering  ===")
-feature_matrix_test = model.predict(x_test)
+feature_matrix_test = model.predict(d.x_test)
 feature_matrix_test = np.sum(feature_matrix_test,axis=(2,3))
-check_classifier(clf, feature_matrix_test, y_test, label_list, "Scattering input, test")
+check_classifier(clf, feature_matrix_test, d.y_test, label_list, "Scattering input, test")
 print("=== Now checking classificaition with scattering and rotation ===")
-feature_matrix_test_rot = model.predict(x_test_rot)
+feature_matrix_test_rot = model.predict(d.x_test_rot)
 feature_matrix_test_rot = np.sum(feature_matrix_test_rot,axis=(2,3))
-check_classifier(clf, feature_matrix_test_rot, y_test, label_list, "Scattering on rotated image input, test")
+check_classifier(clf, feature_matrix_test_rot, d.y_test, d.label_list, "Scattering on rotated image input, test")
 #check_classifier(clf, , y_test, label_list)
 
 #plot_features(x_train, x_train_clean, y_train, feature_matrix, np.where(y_train==0), feature_labels, label_list)

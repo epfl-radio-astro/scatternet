@@ -1,6 +1,7 @@
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn import svm, metrics
+import tensorflow as tf
 import matplotlib.pyplot as plt
 
 def check_classifier(clf, X, y, label_list,title = ''):
@@ -28,7 +29,6 @@ class ClassifierSVC():
             self.pca = PCA(n_components)
 
     def fit(self,x,y):
-        print("Fitting classifier with input shape", x.shape)
         x = x.reshape(x.shape[0],-1)
         self.n_features = x.shape[-1]
         self.scaler = StandardScaler()
@@ -39,7 +39,6 @@ class ClassifierSVC():
         self.clf.fit(self.x, y)
 
     def predict(self,x):
-        print("Predicting classifier with input shape", x.shape)
         x = x.reshape(x.shape[0],-1)
         x = self.scaler.transform(x)
         if self.pca:
@@ -49,3 +48,36 @@ class ClassifierSVC():
     def from_predictions(self,**kwargs):
         return self.cls.from_predictions(**kwargs)
 
+class ClassifierNN():
+    _estimator_type = "classifier"
+    def __init__(self, model, dataset): 
+        self.model = model
+        self.dataset = dataset
+        model.compile(optimizer='adam',
+              loss='categorical_crossentropy', #categorical_crossentropy
+              metrics=['accuracy'], weighted_metrics = ['accuracy'])
+
+    def predict(self,x):
+        return self.dataset.decode(self.model.predict(x))
+
+    def fit(self,x,y):
+        checkpoint_name = './model_checkpoint'
+        mcp_save = tf.keras.callbacks.ModelCheckpoint(checkpoint_name,
+                                                      save_weights_only=True,
+                                                      save_best_only=True,
+                                                      monitor='val_accuracy', mode='max', verbose = 1)
+
+        early_stopping = tf.keras.callbacks.EarlyStopping(
+            monitor='val_accuracy', 
+            verbose=1,
+            patience=10,
+            mode='max',
+            restore_best_weights=True)
+
+        self.model.fit(x,
+                  self.dataset.encode(y),
+                  epochs=20, batch_size=32,
+                  validation_split=0.2,
+                  sample_weight=self.dataset.sample_weights,
+                  callbacks = [early_stopping, mcp_save])
+        self.model.load_weights(checkpoint_name)

@@ -1,17 +1,56 @@
 import numpy as np
+import tensorflow as tf
 import h5py
 from scatternet.utils.data_processing import format_galaxies, check_data_processing
+from sklearn.preprocessing import LabelBinarizer
+from sklearn.utils import class_weight
 
 class DataSet():
-    def __init__(self):
-
+    def __init__(self, add_channel = False):
+   
         self.load_data()
         keys, self._unique_indices = np.unique(self.y_train, return_index = True)
-        (self._n_train, self._dim_x, self._dim_y), n_classes = self.x_train.shape, keys.size
+        if add_channel:
+            self._x_train = self._x_train.reshape(*self._x_train.shape,1)
+            self._x_test  = self._x_test.reshape( *self._x_test.shape,1)
+            self._x_val   = self._x_val.reshape(  *self._x_val.shape,1)
+        
+            (self._n_train, self._dim_x, self._dim_y,__), n_classes = self.x_train.shape, keys.size
+        else:
+            (self._n_train, self._dim_x, self._dim_y), n_classes = self.x_train.shape, keys.size
         self._x_test_rot = np.rot90(self.x_test,axes=(1, 2))
+        self._encoder = LabelBinarizer()
+        self._encoder.fit(self.y_train)
 
     def load_data(self):
         raise NotImplementedError
+
+    def preprocess(self,f):
+        
+        self._x_train    = f(self._x_train)
+        self._x_test     = f(self._x_test)
+        self._x_test_rot = f(self._x_test_rot)
+        self._x_val      = f(self._x_val)
+
+    @property
+    def data_shape(self):
+        return self._x_test_rot.shape[1:]
+
+    def encode(self, y):
+        return self._encoder.transform(y)
+
+    def decode(self, y):
+        return self._encoder.inverse_transform(y)
+
+    @property
+    def class_weights(self):
+        return class_weight.compute_class_weight(class_weight='balanced',
+                                                 classes = np.unique(self.y_train),
+                                                 y=self.y_train)
+
+    @property
+    def sample_weights(self):
+        return class_weight.compute_sample_weight('balanced',self.y_train)
 
     @property
     def label_list(self):
@@ -65,6 +104,7 @@ class RadioGalaxies(DataSet):
     '''
     This Radio Galaxy Dataset is a collection and combination of several catalogues
     using the FIRST radio galaxy survey [[1]](https://ui.adsabs.harvard.edu/abs/1995ApJ...450..559B/abstract).
+    https://www.sciencedirect.com/science/article/pii/S2352340923000926
     '''
 
     def load_set(self,F, key, x,y):
@@ -144,21 +184,19 @@ class Galaxy10(DataSet):
 
 class MINST(DataSet):
     '''
-    Galaxy morphology classification on the Galaxy10 DECals Dataset:
-    https://astronn.readthedocs.io/en/latest/galaxy10.html
-    Follow the instructions at the link above to download Galaxy10.h5
+    Classic MINST letters dataset
     '''
 
     def load_data(self):
 
-    (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
-    x_train, x_test = x_train / 255., x_test / 255.
+        (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+        x_train, x_test = x_train / 255., x_test / 255.
 
-    self._x_train = x_train[0:1000]
-    self._y_train = y_train[0:1000]
+        self._x_train = x_train[0:10000]
+        self._y_train = y_train[0:10000]
 
-    self._x_test = x_test[0:1000]
-    self._y_test = y_test[0:1000]
+        self._x_test = x_test[0:1000]
+        self._y_test = y_test[0:1000]
 
 
     @property
