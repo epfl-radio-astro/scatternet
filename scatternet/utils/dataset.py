@@ -4,20 +4,29 @@ import h5py
 from scatternet.utils.data_processing import format_galaxies, check_data_processing
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.utils import class_weight
+import random
+
+def shuffle(x,y):
+    temp = list(zip(x, y))
+    random.shuffle(temp)
+    x,y = zip(*temp)
+    x = np.array(x)
+    y = np.array(y)
+    return x,y
 
 class DataSet():
     def __init__(self, add_channel = False):
    
         self.load_data()
-        keys, self._unique_indices = np.unique(self.y_train, return_index = True)
+        self.keys, self._unique_indices = np.unique(self.y_train, return_index = True)
         if add_channel:
             self._x_train = self._x_train.reshape(*self._x_train.shape,1)
             self._x_test  = self._x_test.reshape( *self._x_test.shape,1)
             self._x_val   = self._x_val.reshape(  *self._x_val.shape,1)
         
-            (self._n_train, self._dim_x, self._dim_y,__), n_classes = self.x_train.shape, keys.size
+            (self._n_train, self._dim_x, self._dim_y,__), self.n_classes = self.x_train.shape, self.keys.size
         else:
-            (self._n_train, self._dim_x, self._dim_y), n_classes = self.x_train.shape, keys.size
+            (self._n_train, self._dim_x, self._dim_y), self.n_classes = self.x_train.shape, self.keys.size
         self._x_test_rot = np.rot90(self.x_test,axes=(1, 2))
         self._encoder = LabelBinarizer()
         self._encoder.fit(self.y_train)
@@ -31,6 +40,45 @@ class DataSet():
         self._x_test     = f(self._x_test)
         self._x_test_rot = f(self._x_test_rot)
         self._x_val      = f(self._x_val)
+
+    def truncate_train(self,n, balance = False):
+
+        if balance:
+            n_per_class = int(n / self.n_classes)
+            indices = []
+            for i, k in enumerate(self.keys):
+                class_indices = np.where(self.y_train == i)[:n_per_class]
+                indices = np.append(indices,class_indices)
+            indices = indices.astype(np.intc)
+            self._x_train = self._x_train[indices]
+            self._y_train = self._y_train[indices]
+
+        else:
+            self._x_train = self._x_train[:n]
+            self._y_train = self._y_train[:n]
+
+    def augment(self):
+
+        print('Augment',self._x_train.shape)
+
+        x_train_flip = np.flip(self.x_train,axis=1)
+        x_train = np.vstack( [self._x_train, x_train_flip])
+        y_train = np.append(self._y_train,self._y_train)
+
+        for k in range(1,4):
+            x_train_rotated         = np.rot90(self._x_train,axes=(1, 2),k=k)
+            x_train_rotated_flipped = np.rot90(x_train_flip,axes=(1, 2),k=k)
+
+            x_train = np.vstack( [x_train, x_train_rotated])
+            x_train = np.vstack( [x_train, x_train_rotated_flipped])
+            y_train = np.append(y_train,self._y_train)
+            y_train = np.append(y_train,self._y_train)
+
+
+        self._x_train, self._y_train = shuffle(x_train, y_train)
+
+        print(self._x_train.shape)
+
 
     @property
     def data_shape(self):
@@ -100,6 +148,8 @@ class DataSet():
     def y_test(self):
         return self._y_test
 
+
+
 class RadioGalaxies(DataSet):
     '''
     This Radio Galaxy Dataset is a collection and combination of several catalogues
@@ -115,15 +165,11 @@ class RadioGalaxies(DataSet):
         x.append(d)
 
     def format(self,x,y, trimby = 120):
-        import random
-        temp = list(zip(x, y))
-        random.shuffle(temp)
-        x, y = zip(*temp)
-        x = np.array(x)
-        y = np.array(y)
+        
+        x,y = shuffle(x,y)
         x = x.astype(np.intc)
         y = y.astype(np.intc)
-        x = x[:,trimby:-trimby,trimby:-trimby]
+        x = x[:,trimby:-trimby,trimby:-trimby]/255.
 
         return x,y
 

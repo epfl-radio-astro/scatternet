@@ -18,6 +18,8 @@ from scatternet.utils.dataset import RadioGalaxies, Galaxy10, MINST
 
 ScaNet = ReducedMorletScattering2D
 d = RadioGalaxies()
+d.truncate_train(20) 
+d.augment()
 
 #================================================
 
@@ -48,7 +50,11 @@ print("ScaNet has {0} output coefficients with dimension {1}".format(n_output_co
 
 #========================================================
 
-plot_features(d.x_train, d.x_train, d.y_train, feature_matrix, np.append(d.unique_indices,[30,40,50,60,70]), feature_labels, d.label_list)
+#plot_features(d.x_train, d.x_train, d.y_train, feature_matrix, np.append(d.unique_indices), feature_labels, d.label_list)
+#for i in range(4):
+#    plot_features(d.x_train, d.x_train, d.y_train, feature_matrix, np.where(d.y_train == 0)[:10], feature_labels, d.label_list)
+
+
 
 feature_matrix = np.sum(feature_matrix,axis=(2,3))
 
@@ -70,15 +76,12 @@ check_classifier(clf, feature_matrix, d.y_train, d.label_list, "Scattering input
 print("=== Now checking classificaition with scattering  ===")
 feature_matrix_test = model.predict(d.x_test)
 feature_matrix_test = np.sum(feature_matrix_test,axis=(2,3))
-check_classifier(clf, feature_matrix_test, d.y_test, label_list, "Scattering input, test")
-print("=== Now checking classificaition with scattering and rotation ===")
-feature_matrix_test_rot = model.predict(d.x_test_rot)
-feature_matrix_test_rot = np.sum(feature_matrix_test_rot,axis=(2,3))
-check_classifier(clf, feature_matrix_test_rot, d.y_test, d.label_list, "Scattering on rotated image input, test")
-#check_classifier(clf, , y_test, label_list)
+check_classifier(clf, feature_matrix_test, d.y_test, d.label_list, "Scattering input, test")
+#print("=== Now checking classificaition with scattering and rotation ===")
+#feature_matrix_test_rot = model.predict(d.x_test_rot)
+#feature_matrix_test_rot = np.sum(feature_matrix_test_rot,axis=(2,3))
+#check_classifier(clf, feature_matrix_test_rot, d.y_test, d.label_list, "Scattering on rotated image input, test")
 
-#plot_features(x_train, x_train_clean, y_train, feature_matrix, np.where(y_train==0), feature_labels, label_list)
-#sys.exit()
 
 
 
