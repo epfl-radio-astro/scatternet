@@ -17,37 +17,55 @@ def shuffle(x,y):
 class DataSet():
     def __init__(self, add_channel = False):
    
+        self.modified = False
         self.load_data()
         self.keys, self._unique_indices = np.unique(self.y_train, return_index = True)
         if add_channel:
-            self._x_train = self._x_train.reshape(*self._x_train.shape,1)
-            self._x_test  = self._x_test.reshape( *self._x_test.shape,1)
-            self._x_val   = self._x_val.reshape(  *self._x_val.shape,1)
-        
-            (self._n_train, self._dim_x, self._dim_y,__), self.n_classes = self.x_train.shape, self.keys.size
+            self.add_channel()
         else:
             (self._n_train, self._dim_x, self._dim_y), self.n_classes = self.x_train.shape, self.keys.size
         self._x_test_rot = np.rot90(self.x_test,axes=(1, 2))
         self._encoder = LabelBinarizer()
         self._encoder.fit(self.y_train)
 
+    def save_original(self):
+        self.__x_train    = np.copy(self._x_train)
+        self.__x_test     = np.copy(self._x_test)
+        self.__x_test_rot = np.copy(self._x_test_rot)
+        self.__x_val      = np.copy(self._x_val)
+
+    def restore_original(self):
+        self._x_train    = self.__x_train
+        self._x_test     = self.__x_test
+        self._x_test_rot = self.__x_test_rot
+        self._x_val      = self.__x_val
+
+    def add_channel(self):
+        self._x_train = self._x_train.reshape(*self._x_train.shape,1)
+        self._x_test  = self._x_test.reshape( *self._x_test.shape,1)
+        self._x_val   = self._x_val.reshape(  *self._x_val.shape,1)
+    
+        (self._n_train, self._dim_x, self._dim_y,__), self.n_classes = self.x_train.shape, self.keys.size
+
     def load_data(self):
         raise NotImplementedError
 
     def preprocess(self,f):
-        
         self._x_train    = f(self._x_train)
         self._x_test     = f(self._x_test)
         self._x_test_rot = f(self._x_test_rot)
         self._x_val      = f(self._x_val)
 
-    def truncate_train(self,n, balance = False):
+    def truncate_train(self,n, balance = False, randomize = False):
+
+        if randomize:
+            self._x_train, self._y_train = shuffle(self._x_train, self._y_train)
 
         if balance:
             n_per_class = int(n / self.n_classes)
             indices = []
             for i, k in enumerate(self.keys):
-                class_indices = np.where(self.y_train == i)[:n_per_class]
+                class_indices = np.where(self.y_train == i)[0][:n_per_class]
                 indices = np.append(indices,class_indices)
             indices = indices.astype(np.intc)
             self._x_train = self._x_train[indices]
@@ -56,6 +74,7 @@ class DataSet():
         else:
             self._x_train = self._x_train[:n]
             self._y_train = self._y_train[:n]
+
 
     def augment(self):
 

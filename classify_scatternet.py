@@ -18,15 +18,15 @@ from kymatio.keras import Scattering2D
 
 ScaNet = ReducedMorletScattering2D
 d = RadioGalaxies(add_channel = False) #
-d.truncate_train(50,balance = True) 
-d.augment()
+d.truncate_train(100,balance = True) 
+#d.augment()
 
 
 #================================================
 
 #the optimal 2^J is of the order of the maximum pixel displacements due to translations and deformations. 
 
-J,L = 4,8#3,8
+J,L = 3,8#3,8
 scanet = ScaNet( J,L, max_order = 2, subsample=True)
 #scanet = Scattering2D(J, L)
 print("Using J = {0} scales, L = {1} angles".format(J,L))
@@ -36,8 +36,8 @@ inputs = Input(shape=d.data_shape)
 x = inputs
 x = scanet(x)
 scamodel = Model(inputs, x)
-#d.preprocess( scamodel.predict )
-d.preprocess( lambda a: np.sum(scamodel.predict(a),axis=(2,3)) )
+d.preprocess( scamodel.predict )
+#d.preprocess( lambda a: np.sum(scamodel.predict(a),axis=(2,3)) )
 
 
 
@@ -48,8 +48,8 @@ d.preprocess( lambda a: np.sum(scamodel.predict(a),axis=(2,3)) )
 inputs = Input(shape=d.data_shape)
 x = inputs
 x = Flatten()(x)
-x = Dropout(0.2)(x)
-x = Dense(64,activation = 'relu')(x)
+#x = Dropout(0.2)(x)
+#x = Dense(64,activation = 'relu')(x)
 x = Dense(len(d.label_list), activation='softmax')(x)
 model = Model(inputs, x)
 model.summary()

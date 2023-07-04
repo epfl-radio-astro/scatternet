@@ -18,8 +18,8 @@ from scatternet.utils.dataset import RadioGalaxies, Galaxy10, MINST
 
 ScaNet = ReducedMorletScattering2D
 d = RadioGalaxies()
-d.truncate_train(20) 
-d.augment()
+d.truncate_train(100, balance = True) 
+#d.augment()
 
 #================================================
 
@@ -57,6 +57,11 @@ print("ScaNet has {0} output coefficients with dimension {1}".format(n_output_co
 
 
 feature_matrix = np.sum(feature_matrix,axis=(2,3))
+
+
+
+#from sklearn.ensemble import RandomForestClassifier
+#clf = RandomForestClassifier(max_depth=2, random_state=0)
 
 clf = ClassifierSVC()
 

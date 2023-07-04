@@ -18,8 +18,8 @@ from kymatio.keras import Scattering2D
 
 ScaNet = ReducedMorletScattering2D
 d = RadioGalaxies(add_channel = True) #
-d.truncate_train(50) 
-d.augment()
+d.truncate_train(100, balance = True) 
+#d.augment()
 
 print(d.class_weights)
 #================================================
