@@ -6,7 +6,6 @@ import tensorflow as tf
 from sklearn import svm, metrics
 
 from tensorflow.keras.models import Model
-from keras.utils import np_utils
 
 from tensorflow.keras.layers import Input, Flatten, Dense, MaxPooling2D, AveragePooling2D, Reshape, Conv2D, Dropout
 
@@ -15,6 +14,7 @@ from scatternet.utils.classifier import check_classifier
 from scatternet.utils.dataset import RadioGalaxies, Galaxy10, MINST
 from scatternet.utils.classifier import check_classifier, ClassifierNN, ClassifierSVC
 from kymatio.keras import Scattering2D
+
 
 def make_cnn_clf(d):
     inputs = Input(shape=(d.dim_x, d.dim_y,1))

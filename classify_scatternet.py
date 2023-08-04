@@ -6,19 +6,19 @@ import numpy as np
 import tensorflow as tf
 
 from tensorflow.keras.models import Model
-from keras.utils import np_utils
+#from keras.utils import np_utils
 
 from tensorflow.keras.layers import Input, Flatten, Dense, MaxPooling2D, Reshape, Conv2D, Dropout
 
 from scatternet.kymatioex.morlet2d import ReducedMorletScattering2D #StarletScattering2D, ShapeletScattering2D
 from scatternet.utils.classifier import check_classifier
-from scatternet.utils.dataset import RadioGalaxies, Galaxy10, MINST
+from scatternet.utils.dataset import RadioGalaxies, Galaxy10, MINST, Mirabest
 from scatternet.utils.classifier import check_classifier, ClassifierNN
 from kymatio.keras import Scattering2D
 
 ScaNet = ReducedMorletScattering2D
-d = RadioGalaxies(add_channel = False) #
-d.truncate_train(100,balance = True) 
+d = Mirabest() #
+#d.truncate_train(100,balance = True) 
 #d.augment()
 
 
@@ -57,7 +57,7 @@ model.summary()
 clf = ClassifierNN(model, d)
 clf.fit(d.x_train, d.y_train)
 check_classifier(clf, d.x_test, d.y_test, d.label_list, "Classic Scattering + NN, test data")
-check_classifier(clf, d.x_test_rot, d.y_test, d.label_list, "Classic Scattering + NN, test data rotated 90 deg")
+#check_classifier(clf, d.x_test_rot, d.y_test, d.label_list, "Classic Scattering + NN, test data rotated 90 deg")
 
 
 

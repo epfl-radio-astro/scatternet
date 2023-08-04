@@ -6,20 +6,19 @@ import numpy as np
 import tensorflow as tf
 
 from tensorflow.keras.models import Model
-from keras.utils import np_utils
 
 from tensorflow.keras.layers import Input, Flatten, Dense, MaxPooling2D, AveragePooling2D, Reshape, Conv2D, Dropout
 
 from scatternet.kymatioex.morlet2d import ReducedMorletScattering2D #StarletScattering2D, ShapeletScattering2D
 from scatternet.utils.classifier import check_classifier
-from scatternet.utils.dataset import RadioGalaxies, Galaxy10, MINST
+from scatternet.utils.dataset import RadioGalaxies, Galaxy10, MINST, Mirabest, MirabestBinary
 from scatternet.utils.classifier import check_classifier, ClassifierNN
 from kymatio.keras import Scattering2D
 
 ScaNet = ReducedMorletScattering2D
-d = RadioGalaxies(add_channel = True) #
-d.truncate_train(100, balance = True) 
-#d.augment()
+d = Mirabest(add_channel = True) #
+#d.truncate_train(100, balance = True) 
+d.augment()
 
 print(d.class_weights)
 #================================================

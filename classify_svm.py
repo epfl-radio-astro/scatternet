@@ -6,19 +6,22 @@ import numpy as np
 import tensorflow as tf
 
 from tensorflow.keras.models import Model
-from keras.utils import np_utils
+#from keras.utils import np_utils
 
 from tensorflow.keras.layers import Input, Flatten, Dense, AveragePooling2D, Reshape
 
 from scatternet.kymatioex.morlet2d import ReducedMorletScattering2D #StarletScattering2D, ShapeletScattering2D
-from scatternet.utils.data_processing import format_galaxies, check_data_processing
+#from scatternet.utils.data_processing import format_galaxies, check_data_processing
 from scatternet.utils.plotting import plot_features
 from scatternet.utils.classifier import check_classifier, ClassifierSVC
-from scatternet.utils.dataset import RadioGalaxies, Galaxy10, MINST
+from scatternet.utils.dataset import RadioGalaxies, Galaxy10, MINST, Mirabest, MirabestBinary
 
 ScaNet = ReducedMorletScattering2D
-d = RadioGalaxies()
-d.truncate_train(100, balance = True) 
+d = MirabestBinary()
+print(d.x_train.shape)
+d.remove_uncertain_classes()
+print(d.x_train.shape)
+#d.truncate_train(100, balance = True) 
 #d.augment()
 
 #================================================
@@ -50,18 +53,13 @@ print("ScaNet has {0} output coefficients with dimension {1}".format(n_output_co
 
 #========================================================
 
-#plot_features(d.x_train, d.x_train, d.y_train, feature_matrix, np.append(d.unique_indices), feature_labels, d.label_list)
-#for i in range(4):
-#    plot_features(d.x_train, d.x_train, d.y_train, feature_matrix, np.where(d.y_train == 0)[:10], feature_labels, d.label_list)
+# plot_features(d.x_train, d.x_train, d.y_train, feature_matrix, d.unique_indices, feature_labels, d.label_list)
+# for i in range(d.keys):
+#     plot_features(d.x_train, d.x_train, d.y_train, feature_matrix, np.where(d.y_train == i)[:5], feature_labels, d.label_list)
 
 
 
 feature_matrix = np.sum(feature_matrix,axis=(2,3))
-
-
-
-#from sklearn.ensemble import RandomForestClassifier
-#clf = RandomForestClassifier(max_depth=2, random_state=0)
 
 clf = ClassifierSVC()
 
@@ -74,11 +72,11 @@ print("=== Now checking classificaition with rotation, test data ===")
 check_classifier(clf, x_test_rot, y_test, label_list,"Rotated image input, test")'''
 
 
-print("=== Now checking classificaition with scattering ===")
+print("=== Now checking train data ===")
 clf.fit(feature_matrix, d.y_train)
 check_classifier(clf, feature_matrix, d.y_train, d.label_list, "Scattering input, train")
 
-print("=== Now checking classificaition with scattering  ===")
+print("=== Now checking test data ===")
 feature_matrix_test = model.predict(d.x_test)
 feature_matrix_test = np.sum(feature_matrix_test,axis=(2,3))
 check_classifier(clf, feature_matrix_test, d.y_test, d.label_list, "Scattering input, test")

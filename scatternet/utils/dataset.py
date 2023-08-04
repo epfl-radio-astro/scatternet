@@ -1,10 +1,15 @@
 import numpy as np
 import tensorflow as tf
 import h5py
+import sys
 from scatternet.utils.data_processing import format_galaxies, check_data_processing
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.utils import class_weight
 import random
+if sys.version_info[0] == 2:
+    import cPickle as pickle
+else:
+    import pickle
 
 def shuffle(x,y):
     temp = list(zip(x, y))
@@ -267,3 +272,107 @@ class MINST(DataSet):
     @property
     def label_list(self):
         return [0,1,2,3,4,5,6,7,8,9]
+    
+class Mirabest(DataSet):
+    '''
+    Classic MINST letters dataset
+    '''
+    
+    def load_data(self):
+
+
+        filepath = './data/Mirabest/batches/'
+        
+        with open(filepath + 'batches.meta', 'rb') as infile:
+            if sys.version_info[0] == 2:
+                data = pickle.load(infile)
+            else:
+                data = pickle.load(infile, encoding='latin1')
+            self.classes = data['label_names']
+        self.class_to_idx = {_class: i for i, _class in enumerate(self.classes)} 
+        self.idx_to_class = {i: _class for i, _class in enumerate(self.classes)}   
+        self._x_test,  self._y_test = self.load_file(filepath,['test_batch'])
+        self._x_val,   self._y_val = self.load_file(filepath,['data_batch_1'])
+        self._x_train, self._y_train = self.load_file(filepath,["data_batch_{0}".format(i) for i in range(2,8)])
+      
+    def load_file(self,file_dir, file_list):
+        data = []
+        targets = []
+        for file_path in file_list:
+            with open(file_dir+ file_path, 'rb') as f:
+                if sys.version_info[0] == 2:
+                    entry = pickle.load(f)
+                else:
+                    entry = pickle.load(f, encoding='latin1')
+
+                data.append(entry['data'])
+                if 'labels' in entry:
+                    targets.extend(entry['labels'])
+                else:
+                    targets.extend(entry['fine_labels'])
+        data = np.vstack(data).reshape(-1, 150, 150)
+        targets = np.array(targets)
+        #data = data.transpose((0, 2, 3, 1))
+        return data,targets
+    
+    def remove_uncertain_classes(self):
+        uncertain_classes = [3,4,7,9]
+        certain_classes = [0, 1,2,5,6,8]
+        
+        def remove_entries(exclude_list, x, y):
+            targets = np.array(y)
+            exclude = np.array(exclude_list).reshape(1, -1)
+            exclude_mask = ~(targets.reshape(-1, 1) == exclude).any(axis=1)
+            #h1 = np.array(h1_list).reshape(1, -1)
+            #h2 = np.array(h2_list).reshape(1, -1)
+            #h1_mask = (targets.reshape(-1, 1) == h1).any(axis=1)
+            #h2_mask = (targets.reshape(-1, 1) == h2).any(axis=1)
+            #targets[h1_mask] = 0 # set all FRI to Class~0
+            #targets[h2_mask] = 1 # set all FRII to Class~1
+            x = x[exclude_mask]
+            y = targets[exclude_mask]
+            return x,y
+        
+        self._x_test, self._y_test  = remove_entries(uncertain_classes,self._x_test, self._y_test)
+        self._x_train,self._y_train = remove_entries(uncertain_classes,self._x_train,self._y_train)
+        self._x_val,  self._y_val   = remove_entries(uncertain_classes,self._x_val,self._y_val)
+        
+        self.keys, self._unique_indices = np.unique(self.y_train, return_index = True)
+        self.n_classes = self.keys.size
+        self._encoder.fit(self.y_train)
+
+    @property
+    def label_list(self):
+        return [self.idx_to_class[i] for i in self.keys]
+    
+class MirabestBinary(Mirabest):
+    def __init__(self, add_channel = False):
+        super().__init__(add_channel)
+        
+        def merge(x, y):
+            targets = np.array(y)
+            fr1_classes = [0,1,2]
+            fr2_classes=[5,6]
+            exclude_list=[3,4,7,8,9]
+            exclude = np.array(exclude_list).reshape(1, -1)
+            exclude_mask = ~(targets.reshape(-1, 1) == exclude).any(axis=1)
+            h1 = np.array(fr1_classes).reshape(1, -1)
+            h2 = np.array(fr2_classes).reshape(1, -1)
+            h1_mask = (y.reshape(-1, 1) == h1).any(axis=1)
+            h2_mask = (y.reshape(-1, 1) == h2).any(axis=1)
+            
+            targets[h1_mask] = 0 # set all FRI to Class~0
+            targets[h2_mask] = 1 # set all FRII to Class~1
+            x = x[exclude_mask]
+            y = targets[exclude_mask]
+            return x,y
+        self._x_test, self._y_test  = merge(self._x_test, self._y_test)
+        self._x_train,self._y_train = merge(self._x_train,self._y_train)
+        self._x_val,  self._y_val   = merge(self._x_val,self._y_val)
+        
+        self.keys, self._unique_indices = np.unique(self.y_train, return_index = True)
+        self.n_classes = self.keys.size
+        self._encoder.fit(self.y_train)
+    @property
+    def label_list(self):
+        return ["FRI","FRII"]
