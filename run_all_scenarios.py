@@ -91,9 +91,10 @@ for n_train in set_n_train:
         for k in clf_keys: results[k][n_train][i]  = {}
 
         # set up dataset
-        d = RadioGalaxies() #
+        #d = RadioGalaxies() #
+        d = MINST() #
         d.truncate_train(n_train, balance = True, randomize=True) 
-        d.augment()
+        #d.augment()
         d.save_original()
 
         # classifier acting on original data
@@ -150,7 +151,7 @@ for n_train in set_n_train:
         results['cnn'][n_train][i]['f1']  = f1
 
 import json
-with open('results_augment.json', 'w', encoding='utf-8') as f:
+with open('results_minst.json', 'w', encoding='utf-8') as f:
     json.dump(results, f, ensure_ascii=False, indent=4)
 
         
