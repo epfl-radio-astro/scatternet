@@ -268,6 +268,9 @@ class MINST(DataSet):
         self._x_test = x_test[0:1000]
         self._y_test = y_test[0:1000]
 
+        self._x_val = x_test[1000:2000]
+        self._y_val = y_test[1000:2000]
+
 
     @property
     def label_list(self):
