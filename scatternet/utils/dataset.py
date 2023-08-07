@@ -349,8 +349,8 @@ class Mirabest(DataSet):
         return [self.idx_to_class[i] for i in self.keys]
     
 class MirabestBinary(Mirabest):
-    def __init__(self, add_channel = False):
-        super().__init__(add_channel)
+    def load_data(self):
+        super().load_data()
         
         def merge(x, y):
             targets = np.array(y)
@@ -373,9 +373,9 @@ class MirabestBinary(Mirabest):
         self._x_train,self._y_train = merge(self._x_train,self._y_train)
         self._x_val,  self._y_val   = merge(self._x_val,self._y_val)
         
-        self.keys, self._unique_indices = np.unique(self.y_train, return_index = True)
-        self.n_classes = self.keys.size
-        self._encoder.fit(self.y_train)
+        #self.keys, self._unique_indices = np.unique(self.y_train, return_index = True)
+        #self.n_classes = self.keys.size
+        #self._encoder.fit(self.y_train)
     @property
     def label_list(self):
         return ["FRI","FRII"]

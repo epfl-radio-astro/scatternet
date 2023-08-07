@@ -54,7 +54,7 @@ class ClassifierNN():
         self.model = model
         self.dataset = dataset
         model.compile(optimizer='adam',
-              loss='categorical_crossentropy', #categorical_crossentropy
+              loss='binary_crossentropy' if len(dataset.label_list) ==2 else 'categorical_crossentropy',
               metrics=['accuracy'], weighted_metrics = ['accuracy'])
 
     def predict(self,x):
@@ -73,10 +73,9 @@ class ClassifierNN():
             patience=10,
             mode='max',
             restore_best_weights=True)
-
         self.model.fit(x,
                   self.dataset.encode(y),
-                  epochs=20, batch_size=32,
+                  epochs=50, batch_size=32,
                   validation_split=0.2,
                   sample_weight=self.dataset.sample_weights,
                   callbacks = [early_stopping, mcp_save])

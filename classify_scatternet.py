@@ -8,18 +8,18 @@ import tensorflow as tf
 from tensorflow.keras.models import Model
 #from keras.utils import np_utils
 
-from tensorflow.keras.layers import Input, Flatten, Dense, MaxPooling2D, Reshape, Conv2D, Dropout
+from tensorflow.keras.layers import Input, Flatten, Dense, MaxPooling2D, GlobalAveragePooling2D, Reshape, Conv2D, Dropout
 
 from scatternet.kymatioex.morlet2d import ReducedMorletScattering2D #StarletScattering2D, ShapeletScattering2D
 from scatternet.utils.classifier import check_classifier
-from scatternet.utils.dataset import RadioGalaxies, Galaxy10, MINST, Mirabest
+from scatternet.utils.dataset import RadioGalaxies, Galaxy10, MINST, Mirabest, MirabestBinary
 from scatternet.utils.classifier import check_classifier, ClassifierNN
 from kymatio.keras import Scattering2D
 
 ScaNet = ReducedMorletScattering2D
-d = Mirabest() #
-#d.truncate_train(100,balance = True) 
-#d.augment()
+d = MirabestBinary() #
+d.truncate_train(20,balance = True) 
+d.augment()
 
 
 #================================================
@@ -47,11 +47,18 @@ d.preprocess( scamodel.predict )
 
 inputs = Input(shape=d.data_shape)
 x = inputs
+x = GlobalAveragePooling2D()(x)
 x = Flatten()(x)
-#x = Dropout(0.2)(x)
-#x = Dense(64,activation = 'relu')(x)
-x = Dense(len(d.label_list), activation='softmax')(x)
+x = Dense(120,activation = 'relu')(x)
+x = Dense(84,activation = 'relu')(x)
+x = Dropout(0.5)(x)
+if len(d.label_list) <= 2:
+    x = Dense(1, activation='sigmoid')(x)
+else:
+    x = Dense(len(d.label_list) , activation='softmax')(x)
+
 model = Model(inputs, x)
+model.summary()
 model.summary()
 
 clf = ClassifierNN(model, d)

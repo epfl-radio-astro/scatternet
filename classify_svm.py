@@ -18,11 +18,8 @@ from scatternet.utils.dataset import RadioGalaxies, Galaxy10, MINST, Mirabest, M
 
 ScaNet = ReducedMorletScattering2D
 d = MirabestBinary()
-print(d.x_train.shape)
-d.remove_uncertain_classes()
-print(d.x_train.shape)
-#d.truncate_train(100, balance = True) 
-#d.augment()
+d.truncate_train(20, balance = True) 
+d.augment()
 
 #================================================
 

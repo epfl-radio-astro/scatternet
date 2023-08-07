@@ -11,7 +11,7 @@ from tensorflow.keras.layers import Input, Flatten, Dense, MaxPooling2D, Average
 
 from scatternet.kymatioex.morlet2d import ReducedMorletScattering2D #StarletScattering2D, ShapeletScattering2D
 from scatternet.utils.classifier import check_classifier
-from scatternet.utils.dataset import RadioGalaxies, Galaxy10, MINST
+from scatternet.utils.dataset import RadioGalaxies, Galaxy10, MINST, Mirabest, MirabestBinary
 from scatternet.utils.classifier import check_classifier, ClassifierNN, ClassifierSVC
 from kymatio.keras import Scattering2D
 
@@ -71,7 +71,8 @@ def eval(clf, d):
     return acc, f1
 
 n_trial = 10
-set_n_train = [20,40,100,200,500,1000, 1500, 2000, 3000, 4000,6000, 10000] 
+#set_n_train = [20,40,100,200,500,1000, 1500, 2000, 3000, 4000,6000, 10000] 
+set_n_train = [20,40,100,200,500] 
 
 J,L = 3,8#3,8
 scanet_reduced = ReducedMorletScattering2D( J,L, max_order = 2)
