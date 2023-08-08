@@ -3,6 +3,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn import svm, metrics
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import numpy as np
 
 def check_classifier(clf, X, y, label_list,title = ''):
 
@@ -28,7 +29,7 @@ class ClassifierSVC():
                 raise RuntimeError("PCA enabled but # of components not set.")
             self.pca = PCA(n_components)
 
-    def fit(self,x,y):
+    def fit(self,x,y, x_val, y_val, verbose = False):
         x = x.reshape(x.shape[0],-1)
         self.n_features = x.shape[-1]
         self.scaler = StandardScaler()
@@ -50,9 +51,10 @@ class ClassifierSVC():
 
 class ClassifierNN():
     _estimator_type = "classifier"
-    def __init__(self, model, dataset): 
+    def __init__(self, model, dataset, outdir = "./"): 
         self.model = model
         self.dataset = dataset
+        self.outdir = outdir
         model.compile(optimizer='adam',
               loss='binary_crossentropy' if len(dataset.label_list) ==2 else 'categorical_crossentropy',
               metrics=['accuracy'], weighted_metrics = ['accuracy'])
@@ -60,23 +62,24 @@ class ClassifierNN():
     def predict(self,x):
         return self.dataset.decode(self.model.predict(x))
 
-    def fit(self,x,y):
-        checkpoint_name = './model_checkpoint'
+    def fit(self,x,y, x_val, y_val, verbose = 'auto'):
+        checkpoint_name = self.outdir + 'model_checkpoint'
         mcp_save = tf.keras.callbacks.ModelCheckpoint(checkpoint_name,
                                                       save_weights_only=True,
                                                       save_best_only=True,
-                                                      monitor='val_accuracy', mode='max', verbose = 1)
+                                                      monitor='val_accuracy', mode='max', verbose = verbose)
 
         early_stopping = tf.keras.callbacks.EarlyStopping(
             monitor='val_accuracy', 
-            verbose=1,
+            verbose=verbose,
             patience=10,
             mode='max',
             restore_best_weights=True)
+
         self.model.fit(x,
                   self.dataset.encode(y),
                   epochs=50, batch_size=32,
-                  validation_split=0.2,
+                  validation_data = (x_val, self.dataset.encode(y_val)),
                   sample_weight=self.dataset.sample_weights,
-                  callbacks = [early_stopping, mcp_save])
+                  callbacks = [early_stopping, mcp_save], verbose = verbose)
         self.model.load_weights(checkpoint_name)

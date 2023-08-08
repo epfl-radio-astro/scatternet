@@ -130,9 +130,13 @@ dmypy.json
 
 # Code outputs
 *.png
+*.json
+*.out
+results/*
 
 # code inputs
 data/*
+
 
 # misc
 .DS_store
