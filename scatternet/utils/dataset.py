@@ -61,6 +61,14 @@ class DataSet():
         self._x_test_rot = f(self._x_test_rot)
         self._x_val      = f(self._x_val)
 
+    def info(self):
+
+        for i, k in enumerate(self.keys):
+            n_train = len(np.where(self.y_train == i)[0])
+            n_test = len(np.where(self.y_test == i)[0])
+            n_val = len(np.where(self.y_val == i)[0])
+            print(self.label_list[i], "n_train =", n_train, "n_val =", n_val, "n_test =", n_test)
+
     def truncate_train(self,n, balance = False, randomize = False):
 
         if randomize:
@@ -80,6 +88,13 @@ class DataSet():
             self._x_train = self._x_train[:n]
             self._y_train = self._y_train[:n]
 
+    def get_example_classes(self,n=1):
+        indices = []
+        for i, k in enumerate(self.keys):
+            class_indices = np.where(self.y_train == i)[0][:n]
+            indices = np.append(indices,class_indices)
+        indices = indices.astype(np.intc)
+        return (self._x_train[indices], self._y_train[indices])
 
     def augment(self):
 

@@ -1,6 +1,7 @@
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn import svm, metrics
+from sklearn.ensemble import RandomForestClassifier
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
@@ -20,10 +21,43 @@ def check_classifier(clf, X, y, label_list,title = ''):
     plt.tight_layout()
     plt.show()
 
-class ClassifierSVC():
+class GenericClassifier():
+    _estimator_type = "classifier"
+    def __init__(self, clf, doPCA=False, n_components_pca = None): 
+        self.clf = clf
+        self.pca = None
+        if doPCA:
+            if n_components_pca == None:
+                raise RuntimeError("PCA enabled but # of components not set.")
+            self.pca = PCA(n_components)
+
+
+    def fit(self,x,y, x_val=None, y_val=None, verbose = False):
+        x = x.reshape(x.shape[0],-1)
+        self.n_features = x.shape[-1]
+        self.scaler = StandardScaler()
+        self.x = self.scaler.fit_transform(x)
+        if self.pca:
+            self.x = self.pca.fit_transform(self.x)
+        #self._fit_clf(self.x,y)
+        self.clf.fit(self.x, y)
+
+    def predict(self,x):
+        x = x.reshape(x.shape[0],-1)
+        x = self.scaler.transform(x)
+        if self.pca:
+            x = self.pca.transform(x)
+        return self.clf.predict(x)
+
+    def from_predictions(self,**kwargs):
+        return self.cls.from_predictions(**kwargs)
+
+class ClassifierSVC(GenericClassifier):
     _estimator_type = "classifier"
     def __init__(self, doPCA=False, n_components_pca = None): 
-        self.pca = None
+        clf = svm.SVC(kernel="linear", class_weight="balanced")
+        super().__init__(clf, doPCA, n_components_pca)
+'''        self.pca = None
         if doPCA:
             if n_components_pca == None:
                 raise RuntimeError("PCA enabled but # of components not set.")
@@ -36,7 +70,7 @@ class ClassifierSVC():
         self.x = self.scaler.fit_transform(x)
         if self.pca:
             self.x = self.pca.fit_transform(self.x)
-        self.clf = svm.SVC(kernel="linear", class_weight="balanced")
+        #self.clf = svm.SVC(kernel="linear", class_weight="balanced")
         self.clf.fit(self.x, y)
 
     def predict(self,x):
@@ -47,7 +81,13 @@ class ClassifierSVC():
         return self.clf.predict(x)
 
     def from_predictions(self,**kwargs):
-        return self.cls.from_predictions(**kwargs)
+        return self.cls.from_predictions(**kwargs)'''
+
+class ClassifierRandomForest(GenericClassifier):
+    _estimator_type = "classifier"
+    def __init__(self, doPCA=False, n_components_pca = None): 
+        clf = RandomForestClassifier(max_depth=2, random_state=0)
+        super().__init__(clf, doPCA, n_components_pca)
 
 class ClassifierNN():
     _estimator_type = "classifier"
