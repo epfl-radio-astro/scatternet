@@ -29,7 +29,7 @@ class GenericClassifier():
         if doPCA:
             if n_components_pca == None:
                 raise RuntimeError("PCA enabled but # of components not set.")
-            self.pca = PCA(n_components)
+            self.pca = PCA(n_components_pca)
 
 
     def fit(self,x,y, x_val=None, y_val=None, verbose = False):
@@ -57,36 +57,11 @@ class ClassifierSVC(GenericClassifier):
     def __init__(self, doPCA=False, n_components_pca = None): 
         clf = svm.SVC(kernel="linear", class_weight="balanced")
         super().__init__(clf, doPCA, n_components_pca)
-'''        self.pca = None
-        if doPCA:
-            if n_components_pca == None:
-                raise RuntimeError("PCA enabled but # of components not set.")
-            self.pca = PCA(n_components)
-
-    def fit(self,x,y, x_val, y_val, verbose = False):
-        x = x.reshape(x.shape[0],-1)
-        self.n_features = x.shape[-1]
-        self.scaler = StandardScaler()
-        self.x = self.scaler.fit_transform(x)
-        if self.pca:
-            self.x = self.pca.fit_transform(self.x)
-        #self.clf = svm.SVC(kernel="linear", class_weight="balanced")
-        self.clf.fit(self.x, y)
-
-    def predict(self,x):
-        x = x.reshape(x.shape[0],-1)
-        x = self.scaler.transform(x)
-        if self.pca:
-            x = self.pca.transform(x)
-        return self.clf.predict(x)
-
-    def from_predictions(self,**kwargs):
-        return self.cls.from_predictions(**kwargs)'''
 
 class ClassifierRandomForest(GenericClassifier):
     _estimator_type = "classifier"
     def __init__(self, doPCA=False, n_components_pca = None): 
-        clf = RandomForestClassifier(max_depth=2, random_state=0)
+        clf = RandomForestClassifier(max_depth=3, random_state=0)
         super().__init__(clf, doPCA, n_components_pca)
 
 class ClassifierNN():

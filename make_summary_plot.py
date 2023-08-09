@@ -8,7 +8,7 @@ import json, sys
 #infile = '/Users/etolley/Desktop/results/results_minst/'
 #infile = '/Users/etolley/Desktop/results/results_mirabestbinary/'
 #infile = '/Users/etolley/Desktop/results/results_aug_mirabest/'
-infile = 'results/results_galaxy/'
+infile = 'results/results_aug_galaxy/'
 results = {}
 
 if infile[-5:] == '.json':

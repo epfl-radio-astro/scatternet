@@ -13,12 +13,12 @@ from tensorflow.keras.layers import Input, Flatten, Dense, AveragePooling2D, Res
 from scatternet.kymatioex.morlet2d import ReducedMorletScattering2D #StarletScattering2D, ShapeletScattering2D
 #from scatternet.utils.data_processing import format_galaxies, check_data_processing
 from scatternet.utils.plotting import plot_features
-from scatternet.utils.classifier import check_classifier, ClassifierSVC
+from scatternet.utils.classifier import check_classifier, ClassifierSVC, ClassifierRandomForest
 from scatternet.utils.dataset import RadioGalaxies, Galaxy10, MINST, Mirabest, MirabestBinary
 
 ScaNet = ReducedMorletScattering2D
 d = MirabestBinary()
-d.truncate_train(600, balance = True) 
+d.truncate_train(100, balance = True) 
 #d.augment()
 
 #================================================
@@ -56,9 +56,9 @@ print("ScaNet has {0} output coefficients with dimension {1}".format(n_output_co
 
 
 
-feature_matrix = np.sum(feature_matrix,axis=(2,3))
+#feature_matrix = np.sum(feature_matrix,axis=(2,3))
 
-clf = ClassifierSVC()
+clf = ClassifierRandomForest()
 
 '''print("=== Now checking control case, no scattering ===")
 clf.fit(x_train, y_train)
@@ -75,7 +75,7 @@ check_classifier(clf, feature_matrix, d.y_train, d.label_list, "Scattering input
 
 print("=== Now checking test data ===")
 feature_matrix_test = model.predict(d.x_test)
-feature_matrix_test = np.sum(feature_matrix_test,axis=(2,3))
+#feature_matrix_test = np.sum(feature_matrix_test,axis=(2,3))
 check_classifier(clf, feature_matrix_test, d.y_test, d.label_list, "Scattering input, test")
 #print("=== Now checking classificaition with scattering and rotation ===")
 #feature_matrix_test_rot = model.predict(d.x_test_rot)
