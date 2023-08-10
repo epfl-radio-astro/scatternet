@@ -120,7 +120,7 @@ def print_status(tag, acc, f1):
 if __name__ == "__main__":
     name = "mbb"
     do_augment = False
-    noise_levels = [0,.1,0.1,0.5] 
+    noise_levels = [0,.01,0.1,0.5] 
     outname = "results_mirabest_binary"
 
     print(sys.argv)
@@ -174,13 +174,12 @@ if __name__ == "__main__":
     results = {}
     for k in clf_keys:
         results[k] = {}
-        results[k][0] = {}
         for n in noise_levels:
             results[k][n] = {}
 
     for i in range(n_trial):
         for n in noise_levels:
-            for k in clf_keys: results[k][i]  = {}
+            for k in clf_keys: results[k][n][i]  = {}
 
             print("###################################################################")
             print("#Trial {0} with {1} injected noise".format(i,n))
@@ -208,8 +207,8 @@ if __name__ == "__main__":
                 classifiers['svm'] = ClassifierSVC()
                 classifiers['svm'].fit(d.x_train,d.y_train)
             acc, f1 = eval(classifiers['svm'], d)
-            results['svm'][0][i]['acc'] = acc
-            results['svm'][0][i]['f1']  = f1
+            results['svm'][n][i]['acc'] = acc
+            results['svm'][n][i]['f1']  = f1
             print_status('svm', acc, f1)
 
             # pass data through scattering2d        
@@ -219,16 +218,16 @@ if __name__ == "__main__":
                 classifiers['scattersvm'] = ClassifierSVC()
                 classifiers['scattersvm'].fit(d.x_train,d.y_train)
             acc, f1 = eval(classifiers['scattersvm'], d)
-            results['scattersvm'][0][i]['acc'] = acc
-            results['scattersvm'][0][i]['f1']  = f1
+            results['scattersvm'][n][i]['acc'] = acc
+            results['scattersvm'][n][i]['f1']  = f1
             print_status('scattersvm', acc, f1)
 
             if n == 0:
                 classifiers['scatternet'] = make_nn_clf(d,outdir)
-                classifiers['scatternet'].fit(d.x_train,d.y_train)
+                classifiers['scatternet'].fit(d.x_train,d.y_train,d.x_val, d.y_val)
             acc, f1 = eval(classifiers['scatternet'], d)
-            results['scatternet'][0][i]['acc'] = acc
-            results['scatternet'][0][i]['f1']  = f1
+            results['scatternet'][n][i]['acc'] = acc
+            results['scatternet'][n][i]['f1']  = f1
             print_status('scatternet', acc, f1)
             
             # pass data through reduced scattering2d  
@@ -240,15 +239,15 @@ if __name__ == "__main__":
                 classifiers['redscattersvm'] = ClassifierSVC()
                 classifiers['redscattersvm'].fit(d.x_train,d.y_train)
             acc, f1 = eval(classifiers['redscattersvm'], d)
-            results['redscattersvm'][0][i]['acc'] = acc
-            results['redscattersvm'][0][i]['f1']  = f1
+            results['redscattersvm'][n][i]['acc'] = acc
+            results['redscattersvm'][n][i]['f1']  = f1
 
             if n == 0:
                 classifiers['redscatternet'] = make_nn_clf(d,outdir)
-                classifiers['redscatternet'].fit(d.x_train,d.y_train)
+                classifiers['redscatternet'].fit(d.x_train,d.y_train,d.x_val, d.y_val)
             acc, f1 = eval(classifiers['redscatternet'], d)
-            results['redscatternet'][0][i]['acc'] = acc
-            results['redscatternet'][0][i]['f1']  = f1
+            results['redscatternet'][n][i]['acc'] = acc
+            results['redscatternet'][n][i]['f1']  = f1
             print_status('redscatternet', acc, f1)
 
             # pass data through 1st order wavelet scattering  
@@ -260,15 +259,15 @@ if __name__ == "__main__":
                 classifiers['wavesvm'] = ClassifierSVC()
                 classifiers['wavesvm'].fit(d.x_train,d.y_train)
             acc, f1 = eval(classifiers['wavesvm'], d)
-            results['wavesvm'][i][0]['acc'] = acc
-            results['wavesvm'][i][0]['f1']  = f1
+            results['wavesvm'][n][i]['acc'] = acc
+            results['wavesvm'][n][i]['f1']  = f1
 
             if n == 0:
                 classifiers['wavenet'] = make_nn_clf(d,outdir)
-                classifiers['wavenet'].fit(d.x_train,d.y_train)
+                classifiers['wavenet'].fit(d.x_train,d.y_train,d.x_val, d.y_val)
             acc, f1 = eval(classifiers['wavenet'], d)
-            results['wavenet'][0][i]['acc'] = acc
-            results['wavenet'][0][i]['f1']  = f1
+            results['wavenet'][n][i]['acc'] = acc
+            results['wavenet'][n][i]['f1']  = f1
             print_status('wavenet', acc, f1)
 
             d.restore_original()
@@ -276,23 +275,23 @@ if __name__ == "__main__":
 
             if n == 0:
                 classifiers['cnn'] = make_cnn_clf(d,outdir)
-                classifiers['cnn'].fit(d.x_train,d.y_train)
+                classifiers['cnn'].fit(d.x_train,d.y_train,d.x_val, d.y_val)
             acc, f1 = eval(classifiers['cnn'], d)
-            print("{0} training examples, acc = {1:.2f}, f1 = {2:.2f}".format(n_train, acc, f1))
-            results['cnn'][0][i]['acc'] = acc
-            results['cnn'][0][i]['f1']  = f1
+            #print("{0} training examples, acc = {1:.2f}, f1 = {2:.2f}".format(n_train, acc, f1))
+            results['cnn'][n][i]['acc'] = acc
+            results['cnn'][n][i]['f1']  = f1
             print_status("cnn",acc,f1)
 
             if n == 0:
                 classifiers['cnn2'] = make_cnn_clf_detailed(d,outdir)
-                classifiers['cnn2'].fit(d.x_train,d.y_train)
+                classifiers['cnn2'].fit(d.x_train,d.y_train,d.x_val, d.y_val)
             acc, f1 = eval(classifiers['cnn2'], d)
-            print("{0} training examples, acc = {1:.2f}, f1 = {2:.2f}".format(n_train, acc, f1))
-            results['cnn2'][0][i]['acc'] = acc
-            results['cnn2'][0][i]['f1']  = f1
+            #print("{0} training examples, acc = {1:.2f}, f1 = {2:.2f}".format(n_train, acc, f1))
+            results['cnn2'][n][i]['acc'] = acc
+            results['cnn2'][n][i]['f1']  = f1
             print_status("cnn2",acc,f1)
 
-            with open("{0}/{1}_{2}.json".format(outdir,outname, 0), 'w', encoding='utf-8') as f:
+            with open("{0}/{1}.json".format(outdir,outname), 'w', encoding='utf-8') as f:
                 json.dump(results, f, ensure_ascii=False, indent=4)
 
 

@@ -14,7 +14,7 @@ from tensorflow.keras.layers import Input, Flatten, Dense, MaxPooling2D, GlobalA
 from scatternet.kymatioex.morlet2d import ReducedMorletScattering2D #StarletScattering2D, ShapeletScattering2D
 from scatternet.utils.classifier import check_classifier
 from scatternet.utils.dataset import RadioGalaxies, Galaxy10, MINST, Mirabest, MirabestBinary
-from scatternet.utils.classifier import check_classifier, ClassifierNN, ClassifierSVC
+from scatternet.utils.classifier import check_classifier, ClassifierNN, ClassifierSVC, ClassifierRandomForest
 from kymatio.keras import Scattering2D
 
 
@@ -161,9 +161,9 @@ if __name__ == "__main__":
     scanet   = Scattering2D(J, L, max_order = 2)
     wavenet  = Scattering2D(J, L, max_order = 1) 
 
-    clf_svc = ClassifierSVC()
+    clf_rf = ClassifierRandomForest(True,20)
 
-    clf_keys = ['cnn', 'cnn2','svm', 'redscattersvm','scattersvm', 'wavesvm', 'redscatternet','scatternet', 'wavenet']
+    clf_keys = ['rf', 'redscatterrf','scatterrf', 'waverf']
     #results = {}
     #for k in clf_keys: results[k] = {}
 
@@ -200,67 +200,35 @@ if __name__ == "__main__":
             d.save_original()
 
             # classifier acting on original data
-            acc, f1 = eval(clf_svc, d)
-            results['svm'][i]['acc'] = acc
-            results['svm'][i]['f1']  = f1
-            print_status('svm', acc, f1)
+            acc, f1 = eval(clf_rf, d)
+            results['rf'][i]['acc'] = acc
+            results['rf'][i]['f1']  = f1
+            print_status('rf', acc, f1)
 
             # pass data through scattering2d        
             scatter_data(scanet,d)
-            acc, f1 = eval(clf_svc, d)
-            results['scattersvm'][i]['acc'] = acc
-            results['scattersvm'][i]['f1']  = f1
-            print_status('scattersvm', acc, f1)
-
-            acc, f1 = eval(make_nn_clf(d,outdir), d)
-            results['scatternet'][i]['acc'] = acc
-            results['scatternet'][i]['f1']  = f1
-            print_status('scatternet', acc, f1)
+            acc, f1 = eval(clf_rf, d)
+            results['scatterrf'][i]['acc'] = acc
+            results['scatterrf'][i]['f1']  = f1
+            print_status('scatterrf', acc, f1)
             
             # pass data through reduced scattering2d  
             d.restore_original()
             scatter_data(scanet_reduced,d)
             print("test",d.x_train.shape)
-            acc, f1 = eval(clf_svc, d)
-            results['redscattersvm'][i]['acc'] = acc
-            results['redscattersvm'][i]['f1']  = f1
-
-            acc, f1 = eval(make_nn_clf(d,outdir), d)
-            results['redscatternet'][i]['acc'] = acc
-            results['redscatternet'][i]['f1']  = f1
-            print_status('redscatternet', acc, f1)
+            acc, f1 = eval(clf_rf, d)
+            results['redscatterrf'][i]['acc'] = acc
+            results['redscatterrf'][i]['f1']  = f1
 
             # pass data through 1st order wavelet scattering  
             d.restore_original()
             scatter_data(wavenet,d)
             print("test",d.x_train.shape)
-            acc, f1 = eval(clf_svc, d)
-            results['wavesvm'][i]['acc'] = acc
-            results['wavesvm'][i]['f1']  = f1
+            acc, f1 = eval(clf_rf, d)
+            results['waverf'][i]['acc'] = acc
+            results['waverf'][i]['f1']  = f1
 
-            acc, f1 = eval(make_nn_clf(d,outdir), d)
-            results['wavenet'][i]['acc'] = acc
-            results['wavenet'][i]['f1']  = f1
-            print_status('wavenet', acc, f1)
-
-            d.restore_original()
-
-            d.add_channel()
-            cnn_clf = make_cnn_clf(d,outdir)
-            acc, f1 = eval(cnn_clf, d)
-            print("{0} training examples, acc = {1:.2f}, f1 = {2:.2f}".format(n_train, acc, f1))
-            results['cnn'][i]['acc'] = acc
-            results['cnn'][i]['f1']  = f1
-            print_status("cnn",acc,f1)
-
-            cnn_clf2 = make_cnn_clf_detailed(d,outdir)
-            acc, f1 = eval(cnn_clf2, d)
-            print("{0} training examples, acc = {1:.2f}, f1 = {2:.2f}".format(n_train, acc, f1))
-            results['cnn2'][i]['acc'] = acc
-            results['cnn2'][i]['f1']  = f1
-            print_status("cnn2",acc,f1)
-
-            with open("{0}/{1}_{2}.json".format(outdir,outname, n_train), 'w', encoding='utf-8') as f:
+            with open("{0}/{1}_rf_{2}.json".format(outdir,outname, n_train), 'w', encoding='utf-8') as f:
                 json.dump(results, f, ensure_ascii=False, indent=4)
 
 
