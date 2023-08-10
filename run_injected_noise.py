@@ -183,7 +183,7 @@ if __name__ == "__main__":
             for k in clf_keys: results[k][i]  = {}
 
             print("###################################################################")
-            print("#Trial {0} with {1} training data points".format(i,n_train))
+            print("#Trial {0} with {1} injected noise".format(i,n))
             print("###################################################################")
 
             # set up dataset

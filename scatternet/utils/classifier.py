@@ -77,7 +77,7 @@ class ClassifierNN():
     def predict(self,x):
         return self.dataset.decode(self.model.predict(x))
 
-    def fit(self,x,y, x_val, y_val, verbose = 'auto'):
+    def fit(self,x,y, x_val, y_val, verbose = 0):
         checkpoint_name = self.outdir + 'model_checkpoint'
         mcp_save = tf.keras.callbacks.ModelCheckpoint(checkpoint_name,
                                                       save_weights_only=True,
