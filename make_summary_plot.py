@@ -110,6 +110,39 @@ def make_noise_plot(infile):
     plt.legend(ncol =2, bbox_to_anchor=(0.5, 1.5))
     plt.show()
 
+def make_noise_plots(infile1, infile2, infile3):
+
+    data1 = load_noise_data(infile1)
+    data2 = load_noise_data(infile2)
+    data3 = load_noise_data(infile3)
+
+    fig, axs = plt.subplots(1,3, figsize=(8, 4))
+    plt.subplots_adjust(left=0.1, right=0.95, top=0.7, bottom=0.15, wspace=0)
+    for scenario in data1:
+        f = {}
+        if scenario in plot_format:
+            f = plot_format[scenario]
+        axs[0].errorbar(data1[scenario]['x'],data1[scenario]['acc']['val'],yerr=data1[scenario]['acc']['err'], **f)
+        axs[1].errorbar(data2[scenario]['x'],data2[scenario]['f1']['val'],yerr=data2[scenario]['f1']['err'], label = labels[scenario], **f)
+        axs[2].errorbar(data3[scenario]['x'],data3[scenario]['acc']['val'],yerr=data3[scenario]['acc']['err'], **f)
+
+        
+        #axs[1].set_xscale('log')
+    axs[1].legend(ncol =2, bbox_to_anchor=(0.5, 1.5))
+
+    for i in range(3):
+        axs[i].set_ylim(0.0,1.0)
+        axs[i].grid(axis = 'y')
+        axs[i].set_xlabel( 'Injected noise')
+
+    axs[0].set_ylabel( 'Accuracy')
+    axs[1].set_yticklabels([])
+    axs[2].set_yticklabels([])
+
+
+    
+    plt.show()
+
 
 
 def make_train_size_plot(infile):
@@ -220,8 +253,12 @@ def compare_datasets(infile1, infile2):
 
 #make_noise_plot("/Users/etolley//Desktop/results_noise/results_minst/results_minst.json")
 #make_noise_plot("/Users/etolley/Desktop/results_aug_mirabestbinary.json")
+#make_noise_plot("./results_noise/results_aug_galaxy/results_aug_galaxy.json")
+make_noise_plots("/Users/etolley/Desktop/results_aug_mirabestbinary.json",
+                 "./results_noise/results_aug_galaxy/results_aug_galaxy.json",
+                 "/Users/etolley//Desktop/results_noise/results_minst/results_minst.json")
 #make_train_size_plot("results/results_aug_galaxy/")
-make_train_size_plot("/Users/etolley/Desktop/results/results_minst/")
+#make_train_size_plot("/Users/etolley/Desktop/results/results_minst/")
 #compare_augmentation("results/results_aug_galaxy/","results/results_galaxy/")
 #compare_augmentation("/Users/etolley/Desktop/results/results_aug_mirabestbinary/","/Users/etolley/Desktop/results/results_mirabestbinary/")
 #compare_datasets("/Users/etolley/Desktop/results/results_aug_mirabestbinary/","results/results_aug_galaxy/")

@@ -19,13 +19,16 @@ ScaNet = ReducedMorletScattering2D
 
 #================================================
 
-#d = RadioGalaxies()
-d = MINST()
-x = d.x_train[d._unique_indices]
+d = RadioGalaxies()
+#d = MINST()
+d.truncate_train(5, balance = True) 
+x = d.x_train
+
+
 
 #================================================
 
-M,J,L = d.dim_x, 2,4
+M,J,L = d.dim_x, 3,2
 
 filters_set = filter_bank(M, M, J, L=L)
 
@@ -44,7 +47,8 @@ def colorize(z):
 
 #plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
-fig, axs = plt.subplots(len(d._unique_indices) +1, 1+J*L, sharex=True, sharey=True, figsize = (8,5))
+fig, axs = plt.subplots(len(x) +1, 1+J*L, sharex=True, sharey=True, figsize = (10,5))
+fig.subplots_adjust(hspace=0, wspace= 0)
 #plt.set_cmap('cubehelix')
 
 
@@ -54,41 +58,30 @@ for i, filter in enumerate(filters_set['psi']):
     #filter_c = tf.signal.fft2d(f*x_U, name='fft2d')
     filter_c = tf.signal.fft2d(f, name='fft2d')
     filter_c = np.fft.fftshift(filter_c)
-    #filter_c = np.abs(filter_c)
     axs[0,i+1].imshow(colorize(filter_c))
     axs[0,i+1].get_xaxis().set_ticks([])
     axs[0,i+1].get_yaxis().set_ticks([])
-    #axs[0,i+1].set_title("j = {0},theta={1}".format(i // L, i % L))
     axs[0,i+1].set_title("$j = {}$ \n $\\theta={}$".format(i // L, i % L))
-
-# fig.suptitle((r"Wavelets for each scales $j$ and angles $\theta$ used."
-#               "\nColor saturation and color hue respectively denote complex "
-#               "magnitude and complex phase."), fontsize=13)
-
 
 x_U = tf.signal.fft2d(x, name='fft2d')
 plt.set_cmap('cubehelix')
 
 f = filters_set['phi']["levels"][0]
 
-# filter_c = tf.signal.fft2d(f, name='fft2d')
-# filter_c = np.fft.fftshift(filter_c)
-# filter_c = np.abs(filter_c)
+# filter_c2 = tf.signal.fft2d(f*x, name='fft2d')
+# filter_c2 = np.fft.fftshift(filter_c2)
+# filter_c2 = np.abs(filter_c2)
 
-filter_c2 = tf.signal.fft2d(f*x, name='fft2d')
-filter_c2 = np.fft.fftshift(filter_c2)
-filter_c2 = np.abs(filter_c2)
+# print(filter_c2.shape)
 
-print(filter_c2.shape)
-
-for i in range(len(d._unique_indices)):
+for i in range(len(x)):
     axs[i+1,0].imshow(x[i,:,:])
     for j, filter in enumerate(filters_set['psi']):
         f = filter["levels"][0]
-        filter_c = tf.signal.fft2d(f*x[i,:,:], name='fft2d')
-        filter_c = np.fft.fftshift(filter_c)
-        filter_c = np.abs(filter_c)
-        axs[i+1,j+1].imshow(filter_c)
+        filter_c2 = tf.signal.fft2d(f*x[i,:,:], name='fft2d')
+        filter_c2 = np.fft.fftshift(filter_c2)
+        filter_c2 = np.abs(filter_c2)
+        axs[i+1,j+1].imshow(filter_c2)
 
 
 

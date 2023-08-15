@@ -33,6 +33,17 @@ class DataSet():
         self._encoder = LabelBinarizer()
         self._encoder.fit(self.y_train)
 
+
+    def write(self,outname):
+        with open(outname, 'wb') as f:
+            np.save(f, self.x_train)
+            np.save(f, self.y_train)
+            np.save(f, self.x_val)
+            np.save(f, self.y_val)
+            np.save(f, self.x_test)
+            np.save(f, self.y_test)
+            np.save(f,self.label_list)
+
     def save_original(self):
         self.__x_train    = np.copy(self._x_train)
         self.__x_test     = np.copy(self._x_test)
@@ -87,6 +98,7 @@ class DataSet():
         else:
             self._x_train = self._x_train[:n]
             self._y_train = self._y_train[:n]
+
 
     def get_example_classes(self,n=1):
         indices = []
@@ -187,7 +199,21 @@ class DataSet():
     def y_test(self):
         return self._y_test
 
-
+class DataFromFile(DataSet):
+    def __init__(self, infilename, add_channel = False):
+        self.infilename = infilename
+    def load_data(self):
+        with open(self.infilename, 'rb') as f:
+            self.x_train = np.load(f)
+            self.y_train = np.load(f)
+            self.x_val   = np.load(f)
+            self.y_val   = np.load(f)
+            self.x_test  = np.load(f)
+            self.y_test  = np.load(f)
+            self._label_list= np.load(f)
+    @property
+    def label_list(self):
+        return self._label_list
 
 class RadioGalaxies(DataSet):
     '''

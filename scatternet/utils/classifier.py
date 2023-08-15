@@ -66,10 +66,11 @@ class ClassifierRandomForest(GenericClassifier):
 
 class ClassifierNN():
     _estimator_type = "classifier"
-    def __init__(self, model, dataset, outdir = "./"): 
+    def __init__(self, model, dataset, outdir = "./", outname = "model_checkpoint"): 
         self.model = model
         self.dataset = dataset
         self.outdir = outdir
+        self.outname = outname
         model.compile(optimizer='adam',
               loss='binary_crossentropy' if len(dataset.label_list) ==2 else 'categorical_crossentropy',
               metrics=['accuracy'], weighted_metrics = ['accuracy'])
@@ -78,7 +79,7 @@ class ClassifierNN():
         return self.dataset.decode(self.model.predict(x))
 
     def fit(self,x,y, x_val, y_val, verbose = 0):
-        checkpoint_name = self.outdir + 'model_checkpoint'
+        checkpoint_name = self.outdir + self.outname
         mcp_save = tf.keras.callbacks.ModelCheckpoint(checkpoint_name,
                                                       save_weights_only=True,
                                                       save_best_only=True,
