@@ -2,9 +2,9 @@ import numpy as np
 import tensorflow as tf
 import h5py
 import sys
-from scatternet.utils.data_processing import format_galaxies, check_data_processing
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.utils import class_weight
+
 import random
 if sys.version_info[0] == 2:
     import cPickle as pickle
@@ -20,6 +20,9 @@ def shuffle(x,y):
     return x,y
 
 class DataSet():
+    '''
+    Abstract class that defines the functionality of DataSets in this library
+    '''
     def __init__(self, add_channel = False):
    
         self.modified = False
@@ -283,10 +286,90 @@ class Galaxy10(DataSet):
         self._x_test,  self._y_test = images[split1:split2,:,:], labels[split1:split2]
         self._x_val,  self._y_val = images[split2:split3,:,:], labels[split2:split3]
 
-        self._x_train = format_galaxies(self._x_train, threshold = 0.1, min_size = 100, margin = 2)
-        self._x_test  = format_galaxies(self._x_test,  threshold = 0.1, min_size = 100, margin = 2)
-        self._x_val   = format_galaxies(self._x_val,   threshold = 0.1, min_size = 100, margin = 2)
+        self._x_train = self._format_galaxies(self._x_train, threshold = 0.1, min_size = 100, margin = 2)
+        self._x_test  = self._format_galaxie(self._x_test,  threshold = 0.1, min_size = 100, margin = 2)
+        self._x_val   = self._format_galaxie(self._x_val,   threshold = 0.1, min_size = 100, margin = 2)
 
+    def _format_galaxies(self,x, threshold = 0.3, min_size = 100, margin = 5):
+        
+        from scipy import ndimage
+        from skimage import morphology
+
+        # collapse color channels
+        x = x / 255./3.
+        x = np.sum(x, axis = -1)
+
+        # remove artifacts
+        x_clean = np.zeros(x.shape)
+        for i in range(x.shape[0]):
+            #x_clean[i,:,:] = self._remove_artifacts(x[i,:,:], threshold, min_size, margin)
+            x_clean[i,:,:] = self._flood_select(x[i,:,:], threshold, min_size, margin)
+        return x_clean
+
+    def _remove_artifacts(self,im, threshold = 0.3, min_size = 100, margin = 5, normalize = True):
+        if normalize == True:
+            im = im/np.max(im)
+        label_im, number_of_objects = ndimage.label(im > threshold,np.ones((3,3)))
+        sizes = ndimage.sum(im, label_im, range(number_of_objects + 1))
+        mask = sizes > min_size
+        binary_img = mask[label_im]
+        binary_img = morphology.binary_erosion(binary_img,morphology.disk(margin, dtype=bool))
+        return binary_img*im
+
+
+    def _flood_select(self,im, threshold = 0.3, min_size = 100, margin = 5, normalize = True):
+        if normalize == True:
+            im = im/np.max(im)
+        binary_img = np.full(im.shape, False)
+        visited = np.zeros(im.shape)
+        center_x, center_y = [int(s/2) for s in im.shape]
+        
+        #binary_img[center_x, center_y] = 1
+
+        import sys
+        sys.setrecursionlimit(2500)
+
+        def _flood_fill(x ,y, prev, prev_min, lim = 1000):
+
+            if lim == 0: return
+            lim -= 1
+
+            if x < 0 or x >= im.shape[0] or y < 0 or y >= im.shape[1]:
+                return
+
+            if visited[x,y]: return
+            visited[x,y] = True
+            binary_img[x,y] = 1
+
+            if im[x,y] > threshold:
+
+                #if prev < im[x,y]*.9-0.05: return
+                if im[x,y]*.9 > prev_min: return
+                #if im[x,y]*.95 - 0.05 > prev_min: return
+
+                
+                prev_min = min(prev, im[x,y])
+                prev = im[x,y]
+
+
+                #print(x,y,binary_img[x,y], im[x,y] > threshold, visited[x,y] )
+
+                for r in [x-1, x, x+1]:
+                    for c in [y-1, y, y+1]:
+                        if x == r and y == c:
+                            continue
+                        _flood_fill(r, c, prev, prev_min, lim)
+
+                #_flood_fill(x+1, y, prev, prev_min, lim)
+                #_flood_fill(x-1, y, prev, prev_min, lim)
+                #_flood_fill(x, y+1, prev, prev_min, lim)
+                #_flood_fill(x, y-1, prev, prev_min, lim)
+
+            return
+
+
+        _flood_fill(center_x,center_y, 1., 1.)
+        return binary_img*im
 
     @property
     def label_list(self):
@@ -319,7 +402,7 @@ class MINST(DataSet):
     
 class Mirabest(DataSet):
     '''
-    Classic MINST letters dataset
+    The MiraBest dataset:https://arxiv.org/abs/2305.11108
     '''
     
     def load_data(self):
@@ -414,9 +497,6 @@ class MirabestBinary(Mirabest):
         self._x_train,self._y_train = merge(self._x_train,self._y_train)
         self._x_val,  self._y_val   = merge(self._x_val,self._y_val)
         
-        #self.keys, self._unique_indices = np.unique(self.y_train, return_index = True)
-        #self.n_classes = self.keys.size
-        #self._encoder.fit(self.y_train)
     @property
     def label_list(self):
         return ["FRI","FRII"]

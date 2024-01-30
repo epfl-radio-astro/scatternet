@@ -22,6 +22,9 @@ def check_classifier(clf, X, y, label_list,title = ''):
     plt.show()
 
 class GenericClassifier():
+    '''
+    Abstract class that defines the functionality of Classifiers in this library
+    '''
     _estimator_type = "classifier"
     def __init__(self, clf, doPCA=False, n_components_pca = None): 
         self.clf = clf
